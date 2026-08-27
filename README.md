@@ -37,6 +37,48 @@ own barrel file, re-exported by `lib/cc_core.dart`.
 | `scan/` | AI photo-extraction client (menu/receipt/notebook-page → structured fields → user-confirm screen). Per-app extraction schema injected; core owns the pipeline, camera/crop UX, and confirm-before-save screen |
 | `notebook_import/` | Batch flavor of `scan/`: multi-page capture → queued extraction → review list → bulk insert |
 
+## Module guides
+
+### paywall
+
+Extracted from Table Encore's billing implementation; riverpod-free so
+apps keep their own state wiring.
+
+- `StoreProducts` — the app's catalog: one lifetime unlock, optional
+  premium subscription, optional tip products with labels.
+- `EntitlementService` / `StoreEntitlementService` — cache-first
+  entitlements over `in_app_purchase`; works offline, the purchase
+  stream keeps it honest, `refreshEntitlements()` (call once on app
+  start) downgrades a lapsed subscription only on a definitive store
+  answer. Cache keys `entitlement.unlimited` / `entitlement.premium`
+  are stable across versions.
+- `FreeLimit(count, subjectLabel)` — the free-tier quota.
+  `guard(used:, entitled:)` throws `FreeLimitReachedException` at the
+  cap; `usage(used)` yields counter/paywall copy (`label`, `detail`,
+  overridable via `detailBuilder`).
+- `EntitlementGate` — shows its child when entitled, otherwise
+  intercepts interaction and opens the app's paywall. Closed while
+  entitlements load.
+- `PaywallSheetScaffold` + `PaywallBenefit` + `showPaywallModal` +
+  `runStoreAction` — shared sheet layout and store-error handling;
+  apps own all copy and callbacks.
+- `KeyValueStore` (`SharedPrefsStore`, `InMemoryKeyValueStore`) and
+  `FakeEntitlementService` — persistence seam and test fake.
+
+```dart
+const products = StoreProducts(
+  lifetimeUnlock: 'myapp_unlimited',
+  premiumSubscription: 'myapp_premium_annual',
+);
+const freeLimit = FreeLimit(5, 'entries');
+
+final service = StoreEntitlementService(SharedPrefsStore(), products);
+unawaited(service.refreshEntitlements());
+
+// Gating a create action:
+freeLimit.guard(used: await repo.count(), entitled: await service.isUnlimited());
+```
+
 ## Status
 
 Bootstrap only — module folders and barrel files are in place; extraction
