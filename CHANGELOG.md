@@ -1,3 +1,14 @@
+## 0.4.0
+
+* io: `LegacyAndroidPrefs`, a pure-Dart reader for native Android
+  SharedPreferences XML (KMP/native → Flutter rewrite migrations).
+* paywall: `KeyValueStore` gains getString/setString,
+  getDouble/setDouble, and `contains` (never-written detection).
+* text: new module — `FuzzyMatch` (order-independent matching,
+  Levenshtein-backed suggestions, word-order variants) and
+  `toDecimalString` (half-to-even fixed-decimal formatting), extracted
+  from Trace Elements with their donor test suites.
+
 ## 0.3.0
 
 * paywall: `StoreProducts.lifetimeUnlock` is now optional — apps that
