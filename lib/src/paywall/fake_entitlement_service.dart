@@ -84,6 +84,9 @@ class FakeEntitlementService implements EntitlementService {
   Future<void> refreshEntitlements() async {}
 
   @override
+  Stream<String> get storeErrors => const Stream.empty();
+
+  @override
   void dispose() {
     unawaited(_changes.close());
     unawaited(_premiumChanges.close());

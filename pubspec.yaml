@@ -1,11 +1,13 @@
 name: cc_core
 description: "Shared core library for Code Cowboys apps — privacy-first, local-only journal/log building blocks."
-version: 0.1.0
+version: 0.2.0
 repository: https://github.com/Mark-Code-Cowboys/cc_core
 publish_to: none
 
 environment:
-  sdk: ^3.13.1
+  # Matches TableEncore's floor — the module came out of it and every
+  # consumer builds with the same local SDK (Dart 3.12.2).
+  sdk: ^3.12.2
   flutter: ">=1.17.0"
 
 dependencies:
@@ -16,14 +18,13 @@ dependencies:
   stream_transform: ^2.1.1
 
 dev_dependencies:
-  build_runner: ^2.16.0
+  build_runner: ^2.15.1
   drift: ^2.34.3
   drift_dev: ^2.34.5
   flutter_lints: ^6.0.0
   flutter_test:
     sdk: flutter
   mocktail: ^1.0.5
-  test: ^1.31.1
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

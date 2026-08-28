@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:stream_transform/stream_transform.dart';
 
@@ -57,6 +58,11 @@ abstract class EntitlementService {
   /// errors keep the cache, preserving the offline-first promise.
   Future<void> refreshEntitlements();
 
+  /// Human-readable store failures (failed purchases, restore errors)
+  /// as they happen, for surfacing in whatever paywall UI is open.
+  /// Without a listener the failures still go to the debug log.
+  Stream<String> get storeErrors;
+
   /// Cancels the purchase-stream subscription and closes change streams.
   void dispose();
 }
@@ -84,13 +90,28 @@ class StoreEntitlementService implements EntitlementService {
   late final StreamSubscription<List<PurchaseDetails>> _subscription;
   final _changes = StreamController<bool>.broadcast();
   final _premiumChanges = StreamController<bool>.broadcast();
+  final _errors = StreamController<String>.broadcast();
 
   /// Set while [refreshEntitlements] waits for the restore batch that
   /// restorePurchases() pushes onto the purchase stream.
   Completer<Set<String>>? _pendingRefresh;
 
+  @override
+  Stream<String> get storeErrors => _errors.stream;
+
+  void _reportError(String message) {
+    debugPrint('[cc_core.paywall] $message');
+    _errors.add(message);
+  }
+
   Future<void> _onPurchases(List<PurchaseDetails> purchases) async {
     for (final purchase in purchases) {
+      debugPrint(
+          '[cc_core.paywall] ${purchase.productID}: ${purchase.status.name}');
+      if (purchase.status == PurchaseStatus.error) {
+        _reportError('Purchase failed for ${purchase.productID}: '
+            '${purchase.error?.message ?? 'unknown store error'}');
+      }
       final owned = purchase.status == PurchaseStatus.purchased ||
           purchase.status == PurchaseStatus.restored;
       if (owned && purchase.productID == _products.lifetimeUnlock) {
@@ -136,8 +157,10 @@ class StoreEntitlementService implements EntitlementService {
         // the free-tier cap unless the lifetime unlock is owned.
         _premiumChanges.add(false);
       }
-    } on Exception {
-      // Store unreachable or no restore response: keep the cache.
+    } on Exception catch (e) {
+      // Store unreachable or no restore response: keep the cache, but
+      // say so — a silent failure here looks like a lost entitlement.
+      _reportError('Entitlement refresh failed: $e');
     } finally {
       _pendingRefresh = null;
     }
@@ -239,5 +262,6 @@ class StoreEntitlementService implements EntitlementService {
     unawaited(_subscription.cancel());
     unawaited(_changes.close());
     unawaited(_premiumChanges.close());
+    unawaited(_errors.close());
   }
 }

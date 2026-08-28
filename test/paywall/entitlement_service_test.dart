@@ -293,6 +293,53 @@ void main() {
     });
   });
 
+  group('store errors surface', () {
+    test('a failed purchase reports on storeErrors', () async {
+      final service = makeService();
+      final errors = <String>[];
+      final sub = service.storeErrors.listen(errors.add);
+
+      purchases
+          .add([_purchase(_products.lifetimeUnlock, PurchaseStatus.error)]);
+      await pumpEventQueue();
+
+      expect(errors, hasLength(1));
+      expect(errors.single, contains(_products.lifetimeUnlock));
+      await sub.cancel();
+      service.dispose();
+    });
+
+    test('a swallowed refresh failure reports on storeErrors', () async {
+      when(() => iap.restorePurchases())
+          .thenAnswer((_) async => throw Exception('billing error'));
+      final service = makeService();
+      final errors = <String>[];
+      final sub = service.storeErrors.listen(errors.add);
+
+      await service.refreshEntitlements();
+      await pumpEventQueue();
+
+      expect(errors, hasLength(1));
+      expect(errors.single, contains('billing error'));
+      await sub.cancel();
+      service.dispose();
+    });
+
+    test('successful purchases report nothing', () async {
+      final service = makeService();
+      final errors = <String>[];
+      final sub = service.storeErrors.listen(errors.add);
+
+      purchases.add(
+          [_purchase(_products.lifetimeUnlock, PurchaseStatus.purchased)]);
+      await pumpEventQueue();
+
+      expect(errors, isEmpty);
+      await sub.cancel();
+      service.dispose();
+    });
+  });
+
   group('buy flows', () {
     test('buyUnlimited launches a non-consumable purchase', () async {
       when(() => iap.queryProductDetails(any())).thenAnswer((_) async =>

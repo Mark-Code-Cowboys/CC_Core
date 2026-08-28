@@ -27,6 +27,11 @@ Future<void> runStoreAction(
     await action();
   } on StoreUnavailableException {
     messenger.showSnackBar(SnackBar(content: Text(unavailableMessage)));
+  } on Exception catch (e) {
+    // Restore/purchase failures otherwise vanish into an unhandled
+    // async error — show the real reason so store problems are
+    // diagnosable from the device.
+    messenger.showSnackBar(SnackBar(content: Text('Store error: $e')));
   }
 }
 
