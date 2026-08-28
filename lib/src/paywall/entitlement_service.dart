@@ -92,9 +92,12 @@ class StoreEntitlementService implements EntitlementService {
   final _premiumChanges = StreamController<bool>.broadcast();
   final _errors = StreamController<String>.broadcast();
 
-  /// Set while [refreshEntitlements] waits for the restore batch that
-  /// restorePurchases() pushes onto the purchase stream.
-  Completer<Set<String>>? _pendingRefresh;
+  /// Set while [refreshEntitlements] runs: collects every restored
+  /// product id the purchase stream delivers, across however many
+  /// events the platform spreads them over (Android sends one batch;
+  /// iOS StoreKit 2 sends one event per transaction — and none at all
+  /// when nothing is owned).
+  Set<String>? _restoredDuringRefresh;
 
   @override
   Stream<String> get storeErrors => _errors.stream;
@@ -126,18 +129,10 @@ class StoreEntitlementService implements EntitlementService {
         await _iap.completePurchase(purchase);
       }
     }
-    // A restore batch (possibly empty — nothing owned) is the store's
-    // definitive ownership answer; hand it to a waiting refresh.
-    final restoredIds = <String>{
+    _restoredDuringRefresh?.addAll([
       for (final p in purchases)
         if (p.status == PurchaseStatus.restored) p.productID,
-    };
-    final isRestoreBatch =
-        purchases.isEmpty || restoredIds.length == purchases.length;
-    final refresh = _pendingRefresh;
-    if (isRestoreBatch && refresh != null && !refresh.isCompleted) {
-      refresh.complete(restoredIds);
-    }
+    ]);
   }
 
   @override
@@ -147,10 +142,19 @@ class StoreEntitlementService implements EntitlementService {
     if (premiumId == null) return;
     try {
       if (!await _iap.isAvailable()) return;
-      final refresh = _pendingRefresh = Completer<Set<String>>();
+      final restored = _restoredDuringRefresh = <String>{};
+      // Both platform plugins dispatch every owned purchase onto the
+      // purchase stream before this future completes, so once it
+      // returns without throwing the store has given its definitive
+      // ownership answer — the drain below just waits out the stream
+      // delivery, stopping once no new ids arrive for a beat.
       await _iap.restorePurchases();
-      final owned = await refresh.future.timeout(const Duration(seconds: 15));
-      if (!owned.contains(premiumId) &&
+      var lastCount = -1;
+      for (var i = 0; i < 10 && restored.length != lastCount; i++) {
+        lastCount = restored.length;
+        await Future<void>.delayed(const Duration(milliseconds: 300));
+      }
+      if (!restored.contains(premiumId) &&
           (await _kv.getBool(_premiumCacheKey) ?? false)) {
         await _kv.setBool(_premiumCacheKey, false);
         // watchUnlimited merges this stream, so a lapse also re-gates
@@ -158,11 +162,11 @@ class StoreEntitlementService implements EntitlementService {
         _premiumChanges.add(false);
       }
     } on Exception catch (e) {
-      // Store unreachable or no restore response: keep the cache, but
-      // say so — a silent failure here looks like a lost entitlement.
+      // Store unreachable or restore failed: keep the cache, but say
+      // so — a silent failure here looks like a lost entitlement.
       _reportError('Entitlement refresh failed: $e');
     } finally {
-      _pendingRefresh = null;
+      _restoredDuringRefresh = null;
     }
   }
 

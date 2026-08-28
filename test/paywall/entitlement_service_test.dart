@@ -76,6 +76,17 @@ void main() {
     });
   }
 
+  /// Wires restorePurchases the way iOS StoreKit 2 answers: one stream
+  /// event per owned transaction, and no events at all when nothing is
+  /// owned.
+  void restoreReturnsPerTransaction(List<String> ids) {
+    when(() => iap.restorePurchases()).thenAnswer((_) async {
+      for (final id in ids) {
+        purchases.add([_purchase(id, PurchaseStatus.restored)]);
+      }
+    });
+  }
+
   group('purchase stream', () {
     test('a completed unlock purchase entitles and caches', () async {
       final service = makeService();
@@ -219,6 +230,33 @@ void main() {
       await service.refreshEntitlements();
 
       expect(await service.isPremium(), isTrue);
+      service.dispose();
+    });
+
+    test('iOS per-transaction restore keeps an active subscription',
+        () async {
+      // StoreKit 2 spreads a multi-entitlement restore over separate
+      // events; the refresh must judge the union, not the first event.
+      await kv.setBool('entitlement.premium', true);
+      restoreReturnsPerTransaction(
+          [_products.lifetimeUnlock, _products.premiumSubscription!]);
+      final service = makeService();
+
+      await service.refreshEntitlements();
+
+      expect(await service.isPremium(), isTrue);
+      service.dispose();
+    });
+
+    test('iOS restore with nothing owned (zero events) clears premium',
+        () async {
+      await kv.setBool('entitlement.premium', true);
+      restoreReturnsPerTransaction([]);
+      final service = makeService();
+
+      await service.refreshEntitlements();
+
+      expect(await service.isPremium(), isFalse);
       service.dispose();
     });
 
