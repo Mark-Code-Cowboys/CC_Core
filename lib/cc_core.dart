@@ -11,5 +11,6 @@ export 'src/notebook_import/notebook_import.dart';
 export 'src/onboarding/onboarding.dart';
 export 'src/paywall/paywall.dart';
 export 'src/scan/scan.dart';
+export 'src/text/text.dart';
 export 'src/theme/theme.dart';
 export 'src/trends/trends.dart';
