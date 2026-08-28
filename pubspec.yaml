@@ -1,6 +1,6 @@
 name: cc_core
 description: "Shared core library for Code Cowboys apps — privacy-first, local-only journal/log building blocks."
-version: 0.2.0
+version: 0.3.0
 repository: https://github.com/Mark-Code-Cowboys/cc_core
 publish_to: none
 
@@ -14,6 +14,9 @@ dependencies:
   flutter:
     sdk: flutter
   in_app_purchase: ^3.3.0
+  # For GooglePlayProductDetails: base-plan selection on multi-plan
+  # subscriptions. Pure-Dart wrappers; safe to import on every platform.
+  in_app_purchase_android: ^0.5.2
   shared_preferences: ^2.5.5
   stream_transform: ^2.1.1
 

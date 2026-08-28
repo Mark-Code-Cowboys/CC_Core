@@ -1,3 +1,18 @@
+## 0.3.0
+
+* paywall: `StoreProducts.lifetimeUnlock` is now optional — apps that
+  sell subscription + tips only (no one-time unlock) are a supported
+  catalog shape. `buyUnlimited` on such an app is a `StateError`;
+  `unlimitedPrice` is null. At least one of unlock/subscription must be
+  configured (asserted).
+* paywall: subscriptions with multiple base plans (monthly/yearly under
+  one product id). New `StoreProducts.premiumPlanLabels` catalog map,
+  `EntitlementService.premiumPlans()` returning `SubscriptionPlan` rows
+  with live per-plan prices (base offers preferred over discounted
+  ones), and `buyPremium({planId})` for plan selection via the matching
+  Google Play offer token. Single-plan apps keep `premiumPrice()` /
+  `buyPremium()` unchanged.
+
 ## 0.2.0
 
 * paywall: entitlement refresh is now correct on iOS. StoreKit 2

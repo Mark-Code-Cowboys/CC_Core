@@ -13,6 +13,7 @@ class FakeEntitlementService implements EntitlementService {
     bool premium = false,
     this.fakeUnlimitedPrice = r'$6.99',
     this.fakePremiumPrice = r'$12.99',
+    this.fakePremiumPlans = const [],
     this.fakeTipProducts = const [],
     // ignore: prefer_initializing_formals
   })  : _unlimited = unlimited,
@@ -28,8 +29,14 @@ class FakeEntitlementService implements EntitlementService {
   /// Price returned by [premiumPrice].
   final String? fakePremiumPrice;
 
+  /// Rows returned by [premiumPlans].
+  final List<SubscriptionPlan> fakePremiumPlans;
+
   /// Rows returned by [tipProducts].
   final List<TipProduct> fakeTipProducts;
+
+  /// The planId of the last [buyPremium] call, for assertions.
+  String? lastPlanBought;
 
   final _changes = StreamController<bool>.broadcast();
   final _premiumChanges = StreamController<bool>.broadcast();
@@ -59,6 +66,9 @@ class FakeEntitlementService implements EntitlementService {
   Future<String?> premiumPrice() async => fakePremiumPrice;
 
   @override
+  Future<List<SubscriptionPlan>> premiumPlans() async => fakePremiumPlans;
+
+  @override
   Future<List<TipProduct>> tipProducts() async => fakeTipProducts;
 
   @override
@@ -68,7 +78,8 @@ class FakeEntitlementService implements EntitlementService {
   }
 
   @override
-  Future<void> buyPremium() async {
+  Future<void> buyPremium({String? planId}) async {
+    lastPlanBought = planId;
     _premium = true;
     _premiumChanges.add(true);
     _changes.add(true); // Premium includes the unlock.

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
+import 'package:in_app_purchase_android/in_app_purchase_android.dart';
 import 'package:stream_transform/stream_transform.dart';
 
 import 'kv_store.dart';
@@ -28,12 +29,19 @@ abstract class EntitlementService {
   Stream<bool> watchPremium();
 
   /// Store display price for the unlock, null when the store is
-  /// unavailable (emulator without Play, desktop dev).
+  /// unavailable (emulator without Play, desktop dev) or the app sells
+  /// no lifetime unlock.
   Future<String?> unlimitedPrice();
 
-  /// Store display price for the subscription, null when the store is
-  /// unavailable or the app sells no subscription.
+  /// Store display price for the subscription's first base plan, null
+  /// when the store is unavailable or the app sells no subscription.
+  /// Multi-plan apps should show [premiumPlans] instead.
   Future<String?> premiumPrice();
+
+  /// The subscription's purchasable base plans with live store prices,
+  /// in [StoreProducts.premiumPlanLabels] order; empty when the store
+  /// is unavailable or the app sells no subscription.
+  Future<List<SubscriptionPlan>> premiumPlans();
 
   /// The app's tip products with live store prices; empty when the
   /// store is unavailable or no tips are configured.
@@ -41,10 +49,14 @@ abstract class EntitlementService {
 
   /// Launches the unlock purchase flow. Entitlement lands asynchronously
   /// via the purchase stream; watch [watchUnlimited] for the outcome.
+  /// Throws [StateError] when the app sells no lifetime unlock.
   Future<void> buyUnlimited();
 
   /// Launches the subscription purchase flow; watch [watchPremium].
-  Future<void> buyPremium();
+  /// [planId] selects a base plan from [premiumPlans] (required for a
+  /// multi-plan subscription to be deterministic; omitted, the store's
+  /// first offer is bought).
+  Future<void> buyPremium({String? planId});
 
   /// Launches a consumable tip purchase.
   Future<void> buyTip(String productId);
@@ -194,10 +206,48 @@ class StoreEntitlementService implements EntitlementService {
     yield* _premiumChanges.stream;
   }
 
-  Future<ProductDetails?> _product(String id) async {
+  Future<ProductDetails?> _product(String? id) async {
+    if (id == null) return null;
     if (!await _iap.isAvailable()) return null;
     final response = await _iap.queryProductDetails({id});
     return response.productDetails.firstOrNull;
+  }
+
+  /// Every store offer for the subscription. Google Play returns one
+  /// [ProductDetails] per base-plan offer under the same product id.
+  Future<List<ProductDetails>> _premiumOffers() async {
+    final premiumId = _products.premiumSubscription;
+    if (premiumId == null) return const [];
+    if (!await _iap.isAvailable()) return const [];
+    final response = await _iap.queryProductDetails({premiumId});
+    return response.productDetails;
+  }
+
+  /// The Play base plan id behind [details], null on platforms that
+  /// don't expose base plans (a StoreKit subscription is one plan).
+  static String? _basePlanIdOf(ProductDetails details) =>
+      details is GooglePlayProductDetails && details.subscriptionIndex != null
+          ? details.productDetails
+              .subscriptionOfferDetails![details.subscriptionIndex!].basePlanId
+          : null;
+
+  /// True for a base plan's standard offer (no offerId) as opposed to a
+  /// promotional/intro offer layered on it — the one to show and buy by
+  /// default.
+  static bool _isBaseOffer(ProductDetails details) =>
+      details is! GooglePlayProductDetails ||
+      details.subscriptionIndex == null ||
+      details.productDetails
+              .subscriptionOfferDetails![details.subscriptionIndex!].offerId ==
+          null;
+
+  ProductDetails? _offerForPlan(List<ProductDetails> offers, String planId) {
+    final ofPlan = [
+      for (final o in offers)
+        if (_basePlanIdOf(o) == planId || o.id == planId) o
+    ];
+    if (ofPlan.isEmpty) return null;
+    return ofPlan.firstWhere(_isBaseOffer, orElse: () => ofPlan.first);
   }
 
   @override
@@ -205,10 +255,33 @@ class StoreEntitlementService implements EntitlementService {
       (await _product(_products.lifetimeUnlock))?.price;
 
   @override
-  Future<String?> premiumPrice() async {
-    final premiumId = _products.premiumSubscription;
-    if (premiumId == null) return null;
-    return (await _product(premiumId))?.price;
+  Future<String?> premiumPrice() async =>
+      (await _product(_products.premiumSubscription))?.price;
+
+  @override
+  Future<List<SubscriptionPlan>> premiumPlans() async {
+    final offers = await _premiumOffers();
+    if (offers.isEmpty) return const [];
+    final labels = _products.premiumPlanLabels;
+    if (labels.isEmpty) {
+      // Single-plan app: derive plans from the store's base offers.
+      return [
+        for (final o in offers)
+          if (_isBaseOffer(o))
+            SubscriptionPlan(
+                id: _basePlanIdOf(o) ?? o.id,
+                label: _basePlanIdOf(o) ?? o.id,
+                price: o.price),
+      ];
+    }
+    return [
+      for (final MapEntry(key: planId, value: label) in labels.entries)
+        if (offers.any((o) => _basePlanIdOf(o) == planId || o.id == planId))
+          SubscriptionPlan(
+              id: planId,
+              label: label,
+              price: _offerForPlan(offers, planId)!.price),
+    ];
   }
 
   @override
@@ -228,6 +301,9 @@ class StoreEntitlementService implements EntitlementService {
 
   @override
   Future<void> buyUnlimited() async {
+    if (_products.lifetimeUnlock == null) {
+      throw StateError('This app has no lifetime unlock product.');
+    }
     final product = await _product(_products.lifetimeUnlock);
     if (product == null) throw const StoreUnavailableException();
     await _iap.buyNonConsumable(
@@ -235,13 +311,20 @@ class StoreEntitlementService implements EntitlementService {
   }
 
   @override
-  Future<void> buyPremium() async {
-    final premiumId = _products.premiumSubscription;
-    if (premiumId == null) {
+  Future<void> buyPremium({String? planId}) async {
+    if (_products.premiumSubscription == null) {
       throw StateError('This app has no premium subscription product.');
     }
-    final product = await _product(premiumId);
-    if (product == null) throw const StoreUnavailableException();
+    final offers = await _premiumOffers();
+    if (offers.isEmpty) throw const StoreUnavailableException();
+    // A GooglePlayProductDetails carries its offer token, so picking
+    // the right ProductDetails is what selects the base plan.
+    final product =
+        planId == null ? offers.first : _offerForPlan(offers, planId);
+    if (product == null) {
+      throw ArgumentError.value(
+          planId, 'planId', 'not among the store\'s offers');
+    }
     // Subscriptions go through buyNonConsumable in in_app_purchase.
     await _iap.buyNonConsumable(
         purchaseParam: PurchaseParam(productDetails: product));
