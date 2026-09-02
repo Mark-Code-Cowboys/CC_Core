@@ -1,3 +1,15 @@
+## 0.5.0
+
+* io: cloud backup, extracted from Table Encore and extended to iCloud.
+  `CloudBackupService` (one backup slot in the *user's own* cloud, no
+  developer servers) with `providerName`/`requiresSignIn` so screens
+  adapt their copy; `GoogleDriveBackupService(GoogleDriveConfig)` —
+  Drive app-data folder, client IDs per app; `ICloudBackupService` —
+  the app's iCloud container root (hidden from the Files app), device
+  Apple ID, polls metadata so tiny uploads that beat the plugin's
+  progress query still settle; `InMemoryCloudBackupService` test fake.
+  New dependencies: google_sign_in, http, icloud_storage.
+
 ## 0.4.0
 
 * io: `LegacyAndroidPrefs`, a pure-Dart reader for native Android

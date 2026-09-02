@@ -29,7 +29,7 @@ own barrel file, re-exported by `lib/cc_core.dart`.
 | Module | Purpose |
 | --- | --- |
 | `paywall/` | Billing wrapper, entitlement cache, `FreeLimit` quota helper, `EntitlementGate` widget, paywall sheet scaffold |
-| `io/` | Export (CSV/JSON), backup/restore (single-file archive), PDF export |
+| `io/` | Export (CSV/JSON), backup/restore (single-file archive), cloud backup slot (Google Drive app-data / iCloud container), PDF export |
 | `journal/` | Entry/tag/rating/photo-attachment models, Drift repository, search |
 | `trends/` | Calendar heatmap, time-window queries, basic chart widgets |
 | `onboarding/` | First-run flow, consent/privacy screen, "your data never leaves your phone" boilerplate |
@@ -83,3 +83,31 @@ freeLimit.guard(used: await repo.count(), entitled: await service.isUnlimited())
 
 Bootstrap only — module folders and barrel files are in place; extraction
 from Table Encore and Trace Elements happens phase by phase.
+
+### io — cloud backup
+
+One backup archive in the *user's own* cloud, never on developer
+servers. Apps build the archive (journal JSON + media zip) and hand
+bytes to a `CloudBackupService`:
+
+- `GoogleDriveBackupService(GoogleDriveConfig(serverClientId:,
+  iosClientId:, fileName:))` — the `drive.appdata` folder. Needs the
+  Web OAuth client ID (Android `serverClientId`) and, on iOS, the iOS
+  client ID plus its reversed form as a `CFBundleURLSchemes` entry.
+- `ICloudBackupService(containerId: 'iCloud.<bundle id>', fileName:)`
+  — the container root (not shown in the Files app), device Apple ID,
+  no in-app sign-in (`requiresSignIn == false`; `signIn()` re-checks
+  and throws a Settings hint when iCloud Drive is off). Needs the
+  iCloud container on the App ID, the iCloud capability with iCloud
+  Documents in `Runner.entitlements`, and a regenerated provisioning
+  profile. iOS only — construct behind `Platform.isIOS`.
+- `InMemoryCloudBackupService` — widget-test fake.
+
+```dart
+final cloud = Platform.isIOS
+    ? ICloudBackupService(containerId: 'iCloud.com.example.app')
+    : GoogleDriveBackupService(const GoogleDriveConfig(
+        serverClientId: '…apps.googleusercontent.com'));
+await cloud.upload(archiveBytes);
+final info = await cloud.latestBackup(); // modified + sizeBytes
+```
