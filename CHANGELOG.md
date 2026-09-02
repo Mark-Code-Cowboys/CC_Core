@@ -1,3 +1,12 @@
+## 0.5.2
+
+* io: `GoogleDriveBackupService` tries the silent reattach at most once
+  per process. The plugin's lightweight path falls back to an unfiltered
+  One Tap sheet, so status reads on every screen open re-prompted the
+  user 4–5 times per visit; after one miss, non-interactive callers get
+  the remembered account and transfers go straight to the explicit
+  sign-in.
+
 ## 0.5.1
 
 * io: `GoogleDriveBackupService` remembers the attached account

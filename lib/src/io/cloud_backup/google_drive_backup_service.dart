@@ -81,6 +81,14 @@ class GoogleDriveBackupService implements CloudBackupService {
   /// The account authenticated in this process, if any.
   GoogleSignInAccount? _account;
 
+  /// Set once a silent reattach came back empty in this process. The
+  /// plugin's lightweight path ends with an unfiltered One Tap sheet
+  /// when no authorized account auto-selects, so retrying it from every
+  /// status read would re-prompt the user on each screen open; after
+  /// one miss, non-interactive callers get the remembered account only
+  /// and transfers go straight to the explicit sign-in.
+  var _silentMissed = false;
+
   @override
   String get providerName => 'Google Drive';
 
@@ -116,6 +124,7 @@ class GoogleDriveBackupService implements CloudBackupService {
 
   Future<void> _remember(GoogleSignInAccount? account) async {
     _account = account;
+    if (account != null) _silentMissed = false;
     await _store?.setString(accountKey, account?.email ?? '');
   }
 
@@ -125,12 +134,16 @@ class GoogleDriveBackupService implements CloudBackupService {
   /// on configuration or sign-in failure.
   Future<GoogleSignInAccount?> _attach({required bool interactive}) async {
     if (_account != null) return _account;
+    if (_silentMissed && !interactive) return null;
     final signIn = await _signIn();
     GoogleSignInAccount? account;
-    try {
-      account = await signIn.attemptLightweightAuthentication();
-    } on GoogleSignInException {
-      account = null; // One Tap unavailable; fall through
+    if (!_silentMissed) {
+      try {
+        account = await signIn.attemptLightweightAuthentication();
+      } on GoogleSignInException {
+        account = null; // One Tap unavailable; fall through
+      }
+      if (account == null) _silentMissed = true;
     }
     if (account == null && interactive) {
       try {
