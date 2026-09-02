@@ -167,8 +167,9 @@ class PaywallSheetScaffold extends StatelessWidget {
               const SizedBox(height: 4),
               Text(
                 highlight!,
-                style: theme.textTheme.bodyMedium
-                    ?.copyWith(color: theme.colorScheme.primary),
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.primary,
+                ),
                 textAlign: TextAlign.center,
               ),
             ],

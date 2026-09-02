@@ -26,7 +26,8 @@ class LegacyAndroidPrefs {
 
     // <int name="k" value="1" />, <long>, <boolean>, <float>
     final valueEntry = RegExp(
-        r'<(int|long|boolean|float)\s+name="([^"]*)"\s+value="([^"]*)"');
+      r'<(int|long|boolean|float)\s+name="([^"]*)"\s+value="([^"]*)"',
+    );
     for (final m in valueEntry.allMatches(xml)) {
       final key = _unescape(m.group(2)!);
       final raw = m.group(3)!;
@@ -44,8 +45,9 @@ class LegacyAndroidPrefs {
     // <string name="k">value</string> — value may be empty or multiline.
     // A self-closing <string name="k" /> is an empty string.
     final stringEntry = RegExp(
-        r'<string\s+name="([^"]*)"\s*(?:/>|>(.*?)</string>)',
-        dotAll: true);
+      r'<string\s+name="([^"]*)"\s*(?:/>|>(.*?)</string>)',
+      dotAll: true,
+    );
     for (final m in stringEntry.allMatches(xml)) {
       result[_unescape(m.group(1)!)] = _unescape(m.group(2) ?? '');
     }
@@ -71,7 +73,9 @@ class LegacyAndroidPrefs {
     if (!s.contains('&')) return s;
     return s
         .replaceAllMapped(
-            RegExp(r'&#(\d+);'), (m) => String.fromCharCode(int.parse(m[1]!)))
+          RegExp(r'&#(\d+);'),
+          (m) => String.fromCharCode(int.parse(m[1]!)),
+        )
         .replaceAll('&lt;', '<')
         .replaceAll('&gt;', '>')
         .replaceAll('&quot;', '"')

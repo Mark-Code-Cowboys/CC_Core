@@ -91,7 +91,9 @@ servers. Apps build the archive (journal JSON + media zip) and hand
 bytes to a `CloudBackupService`:
 
 - `GoogleDriveBackupService(GoogleDriveConfig(serverClientId:,
-  iosClientId:, fileName:))` — the `drive.appdata` folder. Needs the
+  iosClientId:, fileName:), store: KeyValueStore)` — the `drive.appdata`
+  folder; the store keeps the attached account across restarts (Play
+  services won't reattach One Tap silently). Needs the
   Web OAuth client ID (Android `serverClientId`) and, on iOS, the iOS
   client ID plus its reversed form as a `CFBundleURLSchemes` entry.
 - `ICloudBackupService(containerId: 'iCloud.<bundle id>', fileName:)`

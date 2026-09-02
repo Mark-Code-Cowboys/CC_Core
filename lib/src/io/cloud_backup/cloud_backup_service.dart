@@ -36,6 +36,16 @@ class CloudUnavailableException implements Exception {
   String toString() => 'CloudUnavailableException: $message';
 }
 
+/// A transfer needs the user to pick their account again: the provider
+/// remembers who was attached but could not reconnect silently (Google
+/// Play services refuses One Tap after a cancel, on some accounts, and
+/// for a cooldown period). Screens show it as a neutral hint, not an
+/// error, and the next backup/restore reconnects interactively.
+class CloudSignInRequiredException extends CloudUnavailableException {
+  /// Creates the exception; [message] is optional user-facing copy.
+  const CloudSignInRequiredException([super.message = '']);
+}
+
 /// One backup slot in the *user's own* cloud storage — Google Drive's
 /// app-data folder, the app's iCloud container. No Code Cowboys
 /// servers: bytes go from the phone to the user's cloud and nowhere

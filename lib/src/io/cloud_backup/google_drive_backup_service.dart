@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
 
+import '../../paywall/kv_store.dart';
 import 'cloud_backup_service.dart';
 
 /// Per-app Google Drive settings. Client IDs are public and ship in
@@ -52,9 +53,18 @@ class GoogleDriveBackupService implements CloudBackupService {
   GoogleDriveBackupService(
     this.config, {
     http.Client? client,
+    KeyValueStore? store,
     @visibleForTesting AuthHeaders? authHeaders,
-  })  : _http = client ?? http.Client(),
-        _authHeaders = authHeaders; // ignore: prefer_initializing_formals
+  }) : _http = client ?? http.Client(),
+       // ignore: prefer_initializing_formals
+       _store = store,
+       // ignore: prefer_initializing_formals
+       _authHeaders = authHeaders;
+
+  /// Store key for the attached account's email, so the account survives
+  /// a process restart even when Google Play services declines to hand
+  /// the account back silently.
+  static const accountKey = 'cc.cloud_backup.drive.account';
 
   static const _scope = 'https://www.googleapis.com/auth/drive.appdata';
   static const _api = 'https://www.googleapis.com/drive/v3';
@@ -64,8 +74,12 @@ class GoogleDriveBackupService implements CloudBackupService {
   final GoogleDriveConfig config;
 
   final http.Client _http;
+  final KeyValueStore? _store;
   final AuthHeaders? _authHeaders;
   var _initialized = false;
+
+  /// The account authenticated in this process, if any.
+  GoogleSignInAccount? _account;
 
   @override
   String get providerName => 'Google Drive';
@@ -77,11 +91,12 @@ class GoogleDriveBackupService implements CloudBackupService {
     final missingIos = Platform.isIOS && config.iosClientId.isEmpty;
     if (config.serverClientId.isEmpty || missingIos) {
       throw CloudUnavailableException(
-          'Drive sign-in is not configured yet: create the '
-          '${missingIos ? 'iOS' : 'Web'} OAuth client in Google Cloud '
-          'Console and set GoogleDriveConfig.'
-          '${missingIos ? 'iosClientId' : 'serverClientId'}.'
-          '${config.setupHint.isEmpty ? '' : ' ${config.setupHint}'}');
+        'Drive sign-in is not configured yet: create the '
+        '${missingIos ? 'iOS' : 'Web'} OAuth client in Google Cloud '
+        'Console and set GoogleDriveConfig.'
+        '${missingIos ? 'iosClientId' : 'serverClientId'}.'
+        '${config.setupHint.isEmpty ? '' : ' ${config.setupHint}'}',
+      );
     }
     final signIn = GoogleSignIn.instance;
     if (!_initialized) {
@@ -94,66 +109,105 @@ class GoogleDriveBackupService implements CloudBackupService {
     return signIn;
   }
 
+  Future<String?> _remembered() async {
+    final email = await _store?.getString(accountKey);
+    return email == null || email.isEmpty ? null : email;
+  }
+
+  Future<void> _remember(GoogleSignInAccount? account) async {
+    _account = account;
+    await _store?.setString(accountKey, account?.email ?? '');
+  }
+
+  /// The signed-in account: the one from this process, else a silent
+  /// reattach, else — only when [interactive] — the account picker.
+  /// Null when the user backs out; throws [CloudUnavailableException]
+  /// on configuration or sign-in failure.
+  Future<GoogleSignInAccount?> _attach({required bool interactive}) async {
+    if (_account != null) return _account;
+    final signIn = await _signIn();
+    GoogleSignInAccount? account;
+    try {
+      account = await signIn.attemptLightweightAuthentication();
+    } on GoogleSignInException {
+      account = null; // One Tap unavailable; fall through
+    }
+    if (account == null && interactive) {
+      try {
+        account = await signIn.authenticate(scopeHint: const [_scope]);
+      } on GoogleSignInException catch (e) {
+        if (e.code == GoogleSignInExceptionCode.canceled) {
+          return null; // user backed out of the sign-in flow
+        }
+        throw CloudUnavailableException(
+          'Google sign-in failed '
+          '(${e.code.name}): ${e.description ?? 'no details'}',
+        );
+      }
+    }
+    if (account != null) await _remember(account);
+    return account;
+  }
+
   @override
   Future<CloudAccount?> currentAccount() async {
     if (_authHeaders != null) {
       return const CloudAccount(displayName: 'test@example.com');
     }
     try {
-      final signIn = await _signIn();
-      final account = await signIn.attemptLightweightAuthentication();
-      return account == null
-          ? null
-          : CloudAccount(displayName: account.email);
-    } on CloudUnavailableException {
-      return null;
-    } on GoogleSignInException {
-      return null;
+      final account = await _attach(interactive: false);
+      if (account != null) return CloudAccount(displayName: account.email);
+    } on Object {
+      // Misconfiguration or a missing plugin: surface from signIn().
     }
+    final remembered = await _remembered();
+    return remembered == null ? null : CloudAccount(displayName: remembered);
   }
 
   @override
   Future<CloudAccount?> signIn() async {
-    final signIn = await _signIn();
-    try {
-      final account = await signIn.authenticate(scopeHint: const [_scope]);
-      return CloudAccount(displayName: account.email);
-    } on GoogleSignInException catch (e) {
-      if (e.code == GoogleSignInExceptionCode.canceled) {
-        return null; // user backed out of the sign-in flow
-      }
-      throw CloudUnavailableException('Google sign-in failed '
-          '(${e.code.name}): ${e.description ?? 'no details'}');
-    }
+    final account = await _attach(interactive: true);
+    return account == null ? null : CloudAccount(displayName: account.email);
   }
 
   @override
-  Future<void> signOut() async => (await _signIn()).signOut();
+  Future<void> signOut() async {
+    await _remember(null);
+    await (await _signIn()).signOut();
+  }
 
-  Future<Map<String, String>> _headers() async {
+  Future<Map<String, String>> _headers({bool interactive = true}) async {
     if (_authHeaders != null) return _authHeaders();
-    final signIn = await _signIn();
-    final account = await signIn.attemptLightweightAuthentication();
+    final account = await _attach(interactive: interactive);
     if (account == null) {
-      throw const CloudUnavailableException('Not signed in');
+      throw CloudSignInRequiredException(
+        interactive
+            ? 'Not signed in'
+            : 'Tap Back up or Restore to reconnect to Google Drive.',
+      );
     }
-    final authz = await account.authorizationClient
-            .authorizationForScopes(const [_scope]) ??
+    final authz =
+        await account.authorizationClient.authorizationForScopes(const [
+          _scope,
+        ]) ??
         await account.authorizationClient.authorizeScopes(const [_scope]);
     return {'Authorization': 'Bearer ${authz.accessToken}'};
   }
 
-  Future<Map<String, dynamic>?> _findBackup(
-      Map<String, String> headers) async {
+  Future<Map<String, dynamic>?> _findBackup(Map<String, String> headers) async {
     final response = await _http.get(
-      Uri.parse('$_api/files?spaces=appDataFolder'
-          "&q=name='${config.fileName}'"
-          '&fields=files(id,modifiedTime,size)'),
+      Uri.parse(
+        '$_api/files?spaces=appDataFolder'
+        "&q=name='${config.fileName}'"
+        '&fields=files(id,modifiedTime,size)',
+      ),
       headers: headers,
     );
     if (response.statusCode != 200) {
-      throw CloudUnavailableException('Drive list failed '
-          '(${response.statusCode})');
+      throw CloudUnavailableException(
+        'Drive list failed '
+        '(${response.statusCode})',
+      );
     }
     final files =
         (jsonDecode(response.body) as Map<String, dynamic>)['files'] as List;
@@ -162,7 +216,8 @@ class GoogleDriveBackupService implements CloudBackupService {
 
   @override
   Future<BackupInfo?> latestBackup() async {
-    final file = await _findBackup(await _headers());
+    // Never pop the account picker just for a status line.
+    final file = await _findBackup(await _headers(interactive: false));
     if (file == null) return null;
     return BackupInfo(
       modified: DateTime.parse(file['modifiedTime'] as String).toLocal(),
@@ -179,14 +234,20 @@ class GoogleDriveBackupService implements CloudBackupService {
     if (existing == null) {
       // Multipart create: metadata (name + appDataFolder parent) + bytes.
       const boundary = 'cc_core_backup_boundary';
-      final metadata = jsonEncode(
-          {'name': config.fileName, 'parents': const ['appDataFolder']});
+      final metadata = jsonEncode({
+        'name': config.fileName,
+        'parents': const ['appDataFolder'],
+      });
       final body = BytesBuilder()
-        ..add(utf8.encode('--$boundary\r\n'
+        ..add(
+          utf8.encode(
+            '--$boundary\r\n'
             'Content-Type: application/json; charset=UTF-8\r\n\r\n'
             '$metadata\r\n'
             '--$boundary\r\n'
-            'Content-Type: application/zip\r\n\r\n'))
+            'Content-Type: application/zip\r\n\r\n',
+          ),
+        )
         ..add(bytes)
         ..add(utf8.encode('\r\n--$boundary--'));
       response = await _http.post(
@@ -205,8 +266,10 @@ class GoogleDriveBackupService implements CloudBackupService {
       );
     }
     if (response.statusCode != 200) {
-      throw CloudUnavailableException('Drive upload failed '
-          '(${response.statusCode})');
+      throw CloudUnavailableException(
+        'Drive upload failed '
+        '(${response.statusCode})',
+      );
     }
   }
 
@@ -220,8 +283,10 @@ class GoogleDriveBackupService implements CloudBackupService {
       headers: headers,
     );
     if (response.statusCode != 200) {
-      throw CloudUnavailableException('Drive download failed '
-          '(${response.statusCode})');
+      throw CloudUnavailableException(
+        'Drive download failed '
+        '(${response.statusCode})',
+      );
     }
     return response.bodyBytes;
   }

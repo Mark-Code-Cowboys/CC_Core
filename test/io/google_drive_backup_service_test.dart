@@ -10,22 +10,21 @@ import 'package:http/testing.dart';
 /// through the authHeaders seam.
 void main() {
   const config = GoogleDriveConfig(
-      serverClientId: 'web-id', fileName: 'app-backup.zip');
+    serverClientId: 'web-id',
+    fileName: 'app-backup.zip',
+  );
   const found = {
     'files': [
-      {
-        'id': 'f1',
-        'modifiedTime': '2026-08-17T12:00:00.000Z',
-        'size': '2048',
-      }
-    ]
+      {'id': 'f1', 'modifiedTime': '2026-08-17T12:00:00.000Z', 'size': '2048'},
+    ],
   };
   const none = {'files': <Object>[]};
 
   final requests = <http.Request>[];
 
   GoogleDriveBackupService service(
-      Future<http.Response> Function(http.Request) handler) {
+    Future<http.Response> Function(http.Request) handler,
+  ) {
     requests.clear();
     return GoogleDriveBackupService(
       config,
@@ -46,22 +45,25 @@ void main() {
     expect((await s.currentAccount())?.displayName, 'test@example.com');
   });
 
-  test('latestBackup is null without a file and maps metadata with one',
-      () async {
-    expect(await service((_) async => json(none)).latestBackup(), isNull);
+  test(
+    'latestBackup is null without a file and maps metadata with one',
+    () async {
+      expect(await service((_) async => json(none)).latestBackup(), isNull);
 
-    final info = await service((_) async => json(found)).latestBackup();
-    expect(info!.sizeBytes, 2048);
-    expect(info.modified.toUtc(), DateTime.utc(2026, 8, 17, 12));
-    final list = requests.single;
-    expect(list.url.queryParameters['spaces'], 'appDataFolder');
-    expect(list.url.queryParameters['q'], "name='app-backup.zip'");
-    expect(list.headers['Authorization'], 'Bearer tok');
-  });
+      final info = await service((_) async => json(found)).latestBackup();
+      expect(info!.sizeBytes, 2048);
+      expect(info.modified.toUtc(), DateTime.utc(2026, 8, 17, 12));
+      final list = requests.single;
+      expect(list.url.queryParameters['spaces'], 'appDataFolder');
+      expect(list.url.queryParameters['q'], "name='app-backup.zip'");
+      expect(list.headers['Authorization'], 'Bearer tok');
+    },
+  );
 
   test('upload creates via multipart when no backup exists', () async {
-    final s = service((r) async =>
-        r.method == 'POST' ? http.Response('{}', 200) : json(none));
+    final s = service(
+      (r) async => r.method == 'POST' ? http.Response('{}', 200) : json(none),
+    );
 
     await s.upload(Uint8List.fromList([1, 2, 3]));
 
@@ -77,8 +79,9 @@ void main() {
   });
 
   test('upload patches the existing file in place', () async {
-    final s = service((r) async =>
-        r.method == 'PATCH' ? http.Response('{}', 200) : json(found));
+    final s = service(
+      (r) async => r.method == 'PATCH' ? http.Response('{}', 200) : json(found),
+    );
 
     await s.upload(Uint8List.fromList([9]));
 
@@ -93,9 +96,11 @@ void main() {
   test('download returns the bytes, or null with no backup', () async {
     expect(await service((_) async => json(none)).download(), isNull);
 
-    final s = service((r) async => r.url.queryParameters['alt'] == 'media'
-        ? http.Response.bytes([7, 8], 200)
-        : json(found));
+    final s = service(
+      (r) async => r.url.queryParameters['alt'] == 'media'
+          ? http.Response.bytes([7, 8], 200)
+          : json(found),
+    );
     expect(await s.download(), [7, 8]);
     expect(requests.last.url.path, '/drive/v3/files/f1');
   });
@@ -103,8 +108,44 @@ void main() {
   test('non-200 answers surface as CloudUnavailableException', () async {
     final s = service((_) async => http.Response('nope', 503));
     await expectLater(
-        s.latestBackup(), throwsA(isA<CloudUnavailableException>()));
-    await expectLater(s.upload(Uint8List(0)),
-        throwsA(isA<CloudUnavailableException>()));
+      s.latestBackup(),
+      throwsA(isA<CloudUnavailableException>()),
+    );
+    await expectLater(
+      s.upload(Uint8List(0)),
+      throwsA(isA<CloudUnavailableException>()),
+    );
+  });
+
+  group('remembered account', () {
+    test('currentAccount falls back to the stored email when sign-in '
+        'is unavailable', () async {
+      final store = InMemoryKeyValueStore();
+      await store.setString(
+        GoogleDriveBackupService.accountKey,
+        'mark@example.com',
+      );
+      // Blank serverClientId: _signIn throws before touching the plugin.
+      final s = GoogleDriveBackupService(
+        const GoogleDriveConfig(serverClientId: ''),
+        store: store,
+      );
+      expect((await s.currentAccount())?.displayName, 'mark@example.com');
+    });
+
+    test('currentAccount is null with nothing remembered', () async {
+      final s = GoogleDriveBackupService(
+        const GoogleDriveConfig(serverClientId: ''),
+        store: InMemoryKeyValueStore(),
+      );
+      expect(await s.currentAccount(), isNull);
+    });
+
+    test('CloudSignInRequiredException is a CloudUnavailableException', () {
+      expect(
+        const CloudSignInRequiredException('x'),
+        isA<CloudUnavailableException>(),
+      );
+    });
   });
 }

@@ -1,3 +1,14 @@
+## 0.5.1
+
+* io: `GoogleDriveBackupService` remembers the attached account
+  (optional `KeyValueStore`, key `accountKey`) and reconnects
+  interactively only when a transfer needs it. Google Play services
+  refuses One Tap reattach (status 28444) after a button-flow sign-in,
+  so `currentAccount()` reported "not signed in" on every cold start.
+  `latestBackup()` never pops the account picker; it throws the new
+  `CloudSignInRequiredException` (a `CloudUnavailableException`) when
+  a silent reattach is not possible, so screens can show a neutral hint.
+
 ## 0.5.0
 
 * io: cloud backup, extracted from Table Encore and extended to iCloud.

@@ -98,13 +98,12 @@ class PluginICloudFiles implements ICloudFiles {
     required String filePath,
     required String destinationRelativePath,
     required void Function(Stream<double>) onProgress,
-  }) =>
-      ICloudStorage.upload(
-        containerId: containerId,
-        filePath: filePath,
-        destinationRelativePath: destinationRelativePath,
-        onProgress: onProgress,
-      );
+  }) => ICloudStorage.upload(
+    containerId: containerId,
+    filePath: filePath,
+    destinationRelativePath: destinationRelativePath,
+    onProgress: onProgress,
+  );
 
   @override
   Future<void> download({
@@ -112,20 +111,21 @@ class PluginICloudFiles implements ICloudFiles {
     required String relativePath,
     required String destinationFilePath,
     required void Function(Stream<double>) onProgress,
-  }) =>
-      ICloudStorage.download(
-        containerId: containerId,
-        relativePath: relativePath,
-        destinationFilePath: destinationFilePath,
-        onProgress: onProgress,
-      );
+  }) => ICloudStorage.download(
+    containerId: containerId,
+    relativePath: relativePath,
+    destinationFilePath: destinationFilePath,
+    onProgress: onProgress,
+  );
 
   @override
   Future<void> delete({
     required String containerId,
     required String relativePath,
-  }) =>
-      ICloudStorage.delete(containerId: containerId, relativePath: relativePath);
+  }) => ICloudStorage.delete(
+    containerId: containerId,
+    relativePath: relativePath,
+  );
 }
 
 /// iCloud implementation: the backup lives at the root of the app's
@@ -149,8 +149,8 @@ class ICloudBackupService implements CloudBackupService {
     Directory? tempDir,
     this.syncTimeout = const Duration(seconds: 90),
     this.pollInterval = const Duration(seconds: 1),
-  })  : _files = files, // ignore: prefer_initializing_formals
-        _tempDir = tempDir ?? Directory.systemTemp;
+  }) : _files = files, // ignore: prefer_initializing_formals
+       _tempDir = tempDir ?? Directory.systemTemp;
 
   /// The iCloud container identifier from the Apple Developer portal.
   final String containerId;
@@ -189,9 +189,10 @@ class ICloudBackupService implements CloudBackupService {
 
   CloudUnavailableException _wrap(PlatformException e) =>
       CloudUnavailableException(switch (e.code) {
-        ICloudFiles.containerUnavailable => 'iCloud Drive is turned off '
-            'for this app. In Settings, sign in to iCloud and allow '
-            'iCloud Drive, then try again.',
+        ICloudFiles.containerUnavailable =>
+          'iCloud Drive is turned off '
+              'for this app. In Settings, sign in to iCloud and allow '
+              'iCloud Drive, then try again.',
         _ => 'iCloud error (${e.code}): ${e.message ?? 'no details'}',
       });
 
@@ -227,8 +228,7 @@ class ICloudBackupService implements CloudBackupService {
     try {
       final entry = await _find();
       if (entry == null) return null;
-      return BackupInfo(
-          modified: entry.modified, sizeBytes: entry.sizeInBytes);
+      return BackupInfo(modified: entry.modified, sizeBytes: entry.sizeInBytes);
     } on PlatformException catch (e) {
       throw _wrap(e);
     }
@@ -348,8 +348,9 @@ class ICloudBackupService implements CloudBackupService {
       return await staging.readAsBytes();
     } on TimeoutException {
       throw const CloudUnavailableException(
-          "iCloud hasn't finished downloading the backup — check your "
-          'connection and try again.');
+        "iCloud hasn't finished downloading the backup — check your "
+        'connection and try again.',
+      );
     } on PlatformException catch (e) {
       throw _wrap(e);
     } finally {

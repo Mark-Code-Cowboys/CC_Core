@@ -74,8 +74,9 @@ class FreeLimitUsage {
   String get detail =>
       _freeLimit.detailBuilder?.call(remaining) ??
       switch (remaining) {
-        0 => 'Free ${_freeLimit.subjectLabel} all used — '
-            'unlock to add more.',
+        0 =>
+          'Free ${_freeLimit.subjectLabel} all used — '
+              'unlock to add more.',
         1 => '1 more free — then the unlock.',
         final n => '$n more free — then the unlock.',
       };

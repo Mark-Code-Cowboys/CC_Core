@@ -34,7 +34,7 @@ class EntitlementGate extends StatelessWidget {
   /// Optional locked presentation; [openPaywall] is pre-wired to
   /// [showPaywall] for the tap handler.
   final Widget Function(BuildContext context, VoidCallback openPaywall)?
-      lockedBuilder;
+  lockedBuilder;
 
   @override
   Widget build(BuildContext context) {

@@ -35,8 +35,7 @@ void main() {
       expect(prefs, isEmpty);
     });
 
-    test('unescapes XML entities in strings and handles empty strings',
-        () {
+    test('unescapes XML entities in strings and handles empty strings', () {
       const xml = '''
 <map>
     <string name="note">salt &amp; pepper &lt;3 &#8220;quoted&#8221;</string>
@@ -53,7 +52,8 @@ void main() {
     });
 
     test('negative and 64-bit long values survive', () {
-      const xml = '<map><long name="sentinel" value="-1" />'
+      const xml =
+          '<map><long name="sentinel" value="-1" />'
           '<long name="big" value="9223372036854775807" /></map>';
 
       final prefs = LegacyAndroidPrefs.parse(xml);
@@ -66,13 +66,16 @@ void main() {
   group('LegacyAndroidPrefs.readFile', () {
     test('a missing file reads as an empty map', () async {
       final prefs = await LegacyAndroidPrefs.readFile(
-          File('/nonexistent/shared_prefs/nope.xml'));
+        File('/nonexistent/shared_prefs/nope.xml'),
+      );
       expect(prefs, isEmpty);
     });
 
     test('fileIn builds the conventional shared_prefs path', () {
-      final f =
-          LegacyAndroidPrefs.fileIn(Directory('/data/user/0/com.app'), 'ts');
+      final f = LegacyAndroidPrefs.fileIn(
+        Directory('/data/user/0/com.app'),
+        'ts',
+      );
       expect(f.path, '/data/user/0/com.app/shared_prefs/ts.xml');
     });
   });

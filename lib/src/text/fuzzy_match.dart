@@ -34,8 +34,11 @@ class FuzzyMatch {
   /// Bounded to [max] variants (reversal first, then rotations) so a
   /// caller firing one network load per variant stays cheap.
   static List<String> wordOrderVariants(String query, {int max = 3}) {
-    final tokens =
-        query.trim().split(RegExp(r'\s+')).where((t) => t.isNotEmpty).toList();
+    final tokens = query
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((t) => t.isNotEmpty)
+        .toList();
     final original = tokens.join(' ');
     if (tokens.length < 2 || max < 1) return [original];
     final variants = <String>{original, tokens.reversed.join(' ')};
@@ -50,8 +53,11 @@ class FuzzyMatch {
   /// The best-scoring [candidates] for [query], most similar first.
   /// Exact matches are excluded (the caller already has those); queries
   /// under two characters yield nothing.
-  static List<String> suggest(String query, Iterable<String> candidates,
-      {int max = 3}) {
+  static List<String> suggest(
+    String query,
+    Iterable<String> candidates, {
+    int max = 3,
+  }) {
     final q = query.trim().toLowerCase();
     if (q.length < 2) return const [];
 
@@ -69,7 +75,11 @@ class FuzzyMatch {
     return [for (final (c, _) in scored.take(max)) c];
   }
 
-  static double _score(String query, List<String> queryTokens, String candidate) {
+  static double _score(
+    String query,
+    List<String> queryTokens,
+    String candidate,
+  ) {
     if (candidate.contains(query)) {
       final len = candidate.isEmpty ? 1 : candidate.length;
       return 1.0 + query.length / len;

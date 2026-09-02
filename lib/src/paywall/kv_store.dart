@@ -46,12 +46,10 @@ class SharedPrefsStore implements KeyValueStore {
   Future<int?> getInt(String key) async => (await _prefs).getInt(key);
 
   @override
-  Future<double?> getDouble(String key) async =>
-      (await _prefs).getDouble(key);
+  Future<double?> getDouble(String key) async => (await _prefs).getDouble(key);
 
   @override
-  Future<String?> getString(String key) async =>
-      (await _prefs).getString(key);
+  Future<String?> getString(String key) async => (await _prefs).getString(key);
 
   @override
   Future<void> setBool(String key, bool value) async =>
@@ -70,8 +68,7 @@ class SharedPrefsStore implements KeyValueStore {
       (await _prefs).setString(key, value);
 
   @override
-  Future<bool> contains(String key) async =>
-      (await _prefs).containsKey(key);
+  Future<bool> contains(String key) async => (await _prefs).containsKey(key);
 }
 
 /// Plugin-free [KeyValueStore] for tests and previews.
@@ -97,12 +94,10 @@ class InMemoryKeyValueStore implements KeyValueStore {
   Future<void> setInt(String key, int value) async => _data[key] = value;
 
   @override
-  Future<void> setDouble(String key, double value) async =>
-      _data[key] = value;
+  Future<void> setDouble(String key, double value) async => _data[key] = value;
 
   @override
-  Future<void> setString(String key, String value) async =>
-      _data[key] = value;
+  Future<void> setString(String key, String value) async => _data[key] = value;
 
   @override
   Future<bool> contains(String key) async => _data.containsKey(key);

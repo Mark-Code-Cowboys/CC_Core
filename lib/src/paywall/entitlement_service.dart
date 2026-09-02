@@ -89,7 +89,7 @@ class StoreEntitlementService implements EntitlementService {
   /// Creates the service and starts listening to the purchase stream.
   /// [iap] is injectable for tests; defaults to the real plugin.
   StoreEntitlementService(this._kv, this._products, {InAppPurchase? iap})
-      : _iap = iap ?? InAppPurchase.instance {
+    : _iap = iap ?? InAppPurchase.instance {
     _subscription = _iap.purchaseStream.listen(_onPurchases);
   }
 
@@ -122,12 +122,16 @@ class StoreEntitlementService implements EntitlementService {
   Future<void> _onPurchases(List<PurchaseDetails> purchases) async {
     for (final purchase in purchases) {
       debugPrint(
-          '[cc_core.paywall] ${purchase.productID}: ${purchase.status.name}');
+        '[cc_core.paywall] ${purchase.productID}: ${purchase.status.name}',
+      );
       if (purchase.status == PurchaseStatus.error) {
-        _reportError('Purchase failed for ${purchase.productID}: '
-            '${purchase.error?.message ?? 'unknown store error'}');
+        _reportError(
+          'Purchase failed for ${purchase.productID}: '
+          '${purchase.error?.message ?? 'unknown store error'}',
+        );
       }
-      final owned = purchase.status == PurchaseStatus.purchased ||
+      final owned =
+          purchase.status == PurchaseStatus.purchased ||
           purchase.status == PurchaseStatus.restored;
       if (owned && purchase.productID == _products.lifetimeUnlock) {
         await _kv.setBool(_cacheKey, true);
@@ -227,9 +231,11 @@ class StoreEntitlementService implements EntitlementService {
   /// don't expose base plans (a StoreKit subscription is one plan).
   static String? _basePlanIdOf(ProductDetails details) =>
       details is GooglePlayProductDetails && details.subscriptionIndex != null
-          ? details.productDetails
-              .subscriptionOfferDetails![details.subscriptionIndex!].basePlanId
-          : null;
+      ? details
+            .productDetails
+            .subscriptionOfferDetails![details.subscriptionIndex!]
+            .basePlanId
+      : null;
 
   /// True for a base plan's standard offer (no offerId) as opposed to a
   /// promotional/intro offer layered on it — the one to show and buy by
@@ -237,14 +243,16 @@ class StoreEntitlementService implements EntitlementService {
   static bool _isBaseOffer(ProductDetails details) =>
       details is! GooglePlayProductDetails ||
       details.subscriptionIndex == null ||
-      details.productDetails
-              .subscriptionOfferDetails![details.subscriptionIndex!].offerId ==
+      details
+              .productDetails
+              .subscriptionOfferDetails![details.subscriptionIndex!]
+              .offerId ==
           null;
 
   ProductDetails? _offerForPlan(List<ProductDetails> offers, String planId) {
     final ofPlan = [
       for (final o in offers)
-        if (_basePlanIdOf(o) == planId || o.id == planId) o
+        if (_basePlanIdOf(o) == planId || o.id == planId) o,
     ];
     if (ofPlan.isEmpty) return null;
     return ofPlan.firstWhere(_isBaseOffer, orElse: () => ofPlan.first);
@@ -269,18 +277,20 @@ class StoreEntitlementService implements EntitlementService {
         for (final o in offers)
           if (_isBaseOffer(o))
             SubscriptionPlan(
-                id: _basePlanIdOf(o) ?? o.id,
-                label: _basePlanIdOf(o) ?? o.id,
-                price: o.price),
+              id: _basePlanIdOf(o) ?? o.id,
+              label: _basePlanIdOf(o) ?? o.id,
+              price: o.price,
+            ),
       ];
     }
     return [
       for (final MapEntry(key: planId, value: label) in labels.entries)
         if (offers.any((o) => _basePlanIdOf(o) == planId || o.id == planId))
           SubscriptionPlan(
-              id: planId,
-              label: label,
-              price: _offerForPlan(offers, planId)!.price),
+            id: planId,
+            label: label,
+            price: _offerForPlan(offers, planId)!.price,
+          ),
     ];
   }
 
@@ -288,12 +298,12 @@ class StoreEntitlementService implements EntitlementService {
   Future<List<TipProduct>> tipProducts() async {
     if (_products.tipLabels.isEmpty) return const [];
     if (!await _iap.isAvailable()) return const [];
-    final response =
-        await _iap.queryProductDetails(_products.tipLabels.keys.toSet());
+    final response = await _iap.queryProductDetails(
+      _products.tipLabels.keys.toSet(),
+    );
     final byId = {for (final p in response.productDetails) p.id: p};
     return [
-      for (final MapEntry(key: id, value: label)
-          in _products.tipLabels.entries)
+      for (final MapEntry(key: id, value: label) in _products.tipLabels.entries)
         if (byId[id] != null)
           TipProduct(id: id, label: label, price: byId[id]!.price),
     ];
@@ -307,7 +317,8 @@ class StoreEntitlementService implements EntitlementService {
     final product = await _product(_products.lifetimeUnlock);
     if (product == null) throw const StoreUnavailableException();
     await _iap.buyNonConsumable(
-        purchaseParam: PurchaseParam(productDetails: product));
+      purchaseParam: PurchaseParam(productDetails: product),
+    );
   }
 
   @override
@@ -319,15 +330,20 @@ class StoreEntitlementService implements EntitlementService {
     if (offers.isEmpty) throw const StoreUnavailableException();
     // A GooglePlayProductDetails carries its offer token, so picking
     // the right ProductDetails is what selects the base plan.
-    final product =
-        planId == null ? offers.first : _offerForPlan(offers, planId);
+    final product = planId == null
+        ? offers.first
+        : _offerForPlan(offers, planId);
     if (product == null) {
       throw ArgumentError.value(
-          planId, 'planId', 'not among the store\'s offers');
+        planId,
+        'planId',
+        'not among the store\'s offers',
+      );
     }
     // Subscriptions go through buyNonConsumable in in_app_purchase.
     await _iap.buyNonConsumable(
-        purchaseParam: PurchaseParam(productDetails: product));
+      purchaseParam: PurchaseParam(productDetails: product),
+    );
   }
 
   @override
@@ -335,7 +351,8 @@ class StoreEntitlementService implements EntitlementService {
     final product = await _product(productId);
     if (product == null) throw const StoreUnavailableException();
     await _iap.buyConsumable(
-        purchaseParam: PurchaseParam(productDetails: product));
+      purchaseParam: PurchaseParam(productDetails: product),
+    );
   }
 
   @override

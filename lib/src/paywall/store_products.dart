@@ -17,8 +17,10 @@ class StoreProducts {
     this.premiumSubscription,
     this.premiumPlanLabels = const {},
     this.tipLabels = const {},
-  }) : assert(lifetimeUnlock != null || premiumSubscription != null,
-            'An app must sell an unlock or a subscription (or both).');
+  }) : assert(
+         lifetimeUnlock != null || premiumSubscription != null,
+         'An app must sell an unlock or a subscription (or both).',
+       );
 
   /// Product id of the one-time unlock (non-consumable); null when the
   /// app sells no lifetime unlock (subscription-only apps).
@@ -43,18 +45,21 @@ class StoreProducts {
 
   /// Every product id this app sells.
   List<String> get all => [
-        ?lifetimeUnlock,
-        ?premiumSubscription,
-        ...tipLabels.keys,
-      ];
+    ?lifetimeUnlock,
+    ?premiumSubscription,
+    ...tipLabels.keys,
+  ];
 }
 
 /// One purchasable base plan of the premium subscription, with its live
 /// store price, ready for a plan-picker UI.
 class SubscriptionPlan {
   /// Creates a plan row.
-  const SubscriptionPlan(
-      {required this.id, required this.label, required this.price});
+  const SubscriptionPlan({
+    required this.id,
+    required this.label,
+    required this.price,
+  });
 
   /// Base plan id as configured in Play Console ("monthly"). On
   /// platforms that don't expose base plans, the subscription product
@@ -72,8 +77,11 @@ class SubscriptionPlan {
 /// A purchasable tip with its store price, ready for a tip-jar UI.
 class TipProduct {
   /// Creates a tip row.
-  const TipProduct(
-      {required this.id, required this.label, required this.price});
+  const TipProduct({
+    required this.id,
+    required this.label,
+    required this.price,
+  });
 
   /// Store product id.
   final String id;

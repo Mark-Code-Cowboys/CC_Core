@@ -16,9 +16,9 @@ class FakeEntitlementService implements EntitlementService {
     this.fakePremiumPlans = const [],
     this.fakeTipProducts = const [],
     // ignore: prefer_initializing_formals
-  })  : _unlimited = unlimited,
-        // ignore: prefer_initializing_formals
-        _premium = premium;
+  }) : _unlimited = unlimited,
+       // ignore: prefer_initializing_formals
+       _premium = premium;
 
   bool _unlimited;
   bool _premium;

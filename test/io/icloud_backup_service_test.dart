@@ -59,12 +59,14 @@ class _FakeICloudFiles implements ICloudFiles {
     content = await File(filePath).readAsBytes();
     entries
       ..removeWhere((e) => e.relativePath == destinationRelativePath)
-      ..add(ICloudEntry(
-        relativePath: destinationRelativePath,
-        sizeInBytes: content!.length,
-        modified: DateTime(2026, 9, 2, 9),
-        isUploaded: markUploaded,
-      ));
+      ..add(
+        ICloudEntry(
+          relativePath: destinationRelativePath,
+          sizeInBytes: content!.length,
+          modified: DateTime(2026, 9, 2, 9),
+          isUploaded: markUploaded,
+        ),
+      );
     onProgress(_progress(endUploadStream).stream);
   }
 
@@ -108,15 +110,14 @@ void main() {
 
   ICloudBackupService service({
     Duration syncTimeout = const Duration(seconds: 5),
-  }) =>
-      ICloudBackupService(
-        containerId: 'iCloud.com.example.app',
-        fileName: 'app-backup.zip',
-        files: files,
-        tempDir: tmp,
-        syncTimeout: syncTimeout,
-        pollInterval: const Duration(milliseconds: 5),
-      );
+  }) => ICloudBackupService(
+    containerId: 'iCloud.com.example.app',
+    fileName: 'app-backup.zip',
+    files: files,
+    tempDir: tmp,
+    syncTimeout: syncTimeout,
+    pollInterval: const Duration(milliseconds: 5),
+  );
 
   test('provider metadata: no in-app sign-in', () {
     final s = service();
@@ -124,55 +125,71 @@ void main() {
     expect(s.requiresSignIn, isFalse);
   });
 
-  test('currentAccount is the device label when iCloud is on, else null',
-      () async {
-    expect((await service().currentAccount())?.displayName,
-        ICloudBackupService.accountLabel);
+  test(
+    'currentAccount is the device label when iCloud is on, else null',
+    () async {
+      expect(
+        (await service().currentAccount())?.displayName,
+        ICloudBackupService.accountLabel,
+      );
 
-    files.available = false;
-    expect(await service().currentAccount(), isNull);
-  });
+      files.available = false;
+      expect(await service().currentAccount(), isNull);
+    },
+  );
 
   test('signIn re-checks and explains how to turn iCloud on', () async {
-    expect((await service().signIn())?.displayName,
-        ICloudBackupService.accountLabel);
+    expect(
+      (await service().signIn())?.displayName,
+      ICloudBackupService.accountLabel,
+    );
 
     files.available = false;
     await expectLater(
       service().signIn(),
-      throwsA(isA<CloudUnavailableException>()
-          .having((e) => e.message, 'message', contains('Settings'))),
+      throwsA(
+        isA<CloudUnavailableException>().having(
+          (e) => e.message,
+          'message',
+          contains('Settings'),
+        ),
+      ),
     );
   });
 
-  test('latestBackup is null without a file and maps the entry with one',
-      () async {
-    expect(await service().latestBackup(), isNull);
+  test(
+    'latestBackup is null without a file and maps the entry with one',
+    () async {
+      expect(await service().latestBackup(), isNull);
 
-    files.entries.add(ICloudEntry(
-      relativePath: 'app-backup.zip',
-      sizeInBytes: 512,
-      modified: DateTime(2026, 8, 17, 12),
-      isUploaded: true,
-    ));
-    final info = await service().latestBackup();
-    expect(info!.sizeBytes, 512);
-    expect(info.modified, DateTime(2026, 8, 17, 12));
+      files.entries.add(
+        ICloudEntry(
+          relativePath: 'app-backup.zip',
+          sizeInBytes: 512,
+          modified: DateTime(2026, 8, 17, 12),
+          isUploaded: true,
+        ),
+      );
+      final info = await service().latestBackup();
+      expect(info!.sizeBytes, 512);
+      expect(info.modified, DateTime(2026, 8, 17, 12));
 
-    // Other files in the container are not the backup.
-    files.entries
-      ..clear()
-      ..add(ICloudEntry(
-        relativePath: 'Documents/other.txt',
-        sizeInBytes: 1,
-        modified: DateTime(2026),
-        isUploaded: true,
-      ));
-    expect(await service().latestBackup(), isNull);
-  });
+      // Other files in the container are not the backup.
+      files.entries
+        ..clear()
+        ..add(
+          ICloudEntry(
+            relativePath: 'Documents/other.txt',
+            sizeInBytes: 1,
+            modified: DateTime(2026),
+            isUploaded: true,
+          ),
+        );
+      expect(await service().latestBackup(), isNull);
+    },
+  );
 
-  test('upload stages the bytes at the container root and cleans up',
-      () async {
+  test('upload stages the bytes at the container root and cleans up', () async {
     await service().upload(Uint8List.fromList([1, 2, 3]));
 
     expect(files.content, [1, 2, 3]);
@@ -180,22 +197,25 @@ void main() {
     expect(tmp.listSync(), isEmpty, reason: 'staging file removed');
   });
 
-  test('upload settles by polling when the progress stream never ends',
-      () async {
-    files.endUploadStream = false;
+  test(
+    'upload settles by polling when the progress stream never ends',
+    () async {
+      files.endUploadStream = false;
 
-    await service().upload(Uint8List.fromList([1]));
+      await service().upload(Uint8List.fromList([1]));
 
-    expect(files.entries.single.isUploaded, isTrue);
-  });
+      expect(files.entries.single.isUploaded, isTrue);
+    },
+  );
 
   test('upload that outlasts the sync timeout is not an error', () async {
     files
       ..endUploadStream = false
       ..markUploaded = false;
 
-    await service(syncTimeout: const Duration(milliseconds: 30))
-        .upload(Uint8List.fromList([1]));
+    await service(
+      syncTimeout: const Duration(milliseconds: 30),
+    ).upload(Uint8List.fromList([1]));
 
     expect(files.content, [1]);
     expect(tmp.listSync(), isEmpty);
@@ -203,8 +223,10 @@ void main() {
 
   test('upload reports iCloud being off', () async {
     files.available = false;
-    await expectLater(service().upload(Uint8List(0)),
-        throwsA(isA<CloudUnavailableException>()));
+    await expectLater(
+      service().upload(Uint8List(0)),
+      throwsA(isA<CloudUnavailableException>()),
+    );
   });
 
   test('download returns null with no backup, bytes with one', () async {
@@ -216,8 +238,7 @@ void main() {
     expect(tmp.listSync(), isEmpty, reason: 'staging file removed');
   });
 
-  test('download settles by polling once the full file has landed',
-      () async {
+  test('download settles by polling once the full file has landed', () async {
     await service().upload(Uint8List.fromList([4, 5, 6]));
     files.endDownloadStream = false;
 
@@ -232,8 +253,13 @@ void main() {
 
     await expectLater(
       service(syncTimeout: const Duration(milliseconds: 30)).download(),
-      throwsA(isA<CloudUnavailableException>()
-          .having((e) => e.message, 'message', contains('downloading'))),
+      throwsA(
+        isA<CloudUnavailableException>().having(
+          (e) => e.message,
+          'message',
+          contains('downloading'),
+        ),
+      ),
     );
   });
 }
