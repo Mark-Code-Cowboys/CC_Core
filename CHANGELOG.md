@@ -1,3 +1,18 @@
+## 0.6.0
+
+* paywall: subscriptions sold as one product per plan. The App Store
+  has no base plans — "monthly" and "yearly" are two products in one
+  subscription group — so `StoreProducts` gains `premiumPlanProducts`
+  (plan id → product id). Owning any mapped product is the premium
+  entitlement, `premiumPlans()` queries and prices them in catalog
+  order, `buyPremium(planId:)` buys the mapped product, and the
+  entitlement refresh treats a restore of any of them as active.
+  `premiumSubscription` is now optional when plan products are given;
+  the "sells an unlock or a subscription" rule moved from the const
+  constructor's assert (a map's emptiness isn't a constant expression)
+  to `StoreEntitlementService`'s constructor. Google Play callers are
+  unchanged.
+
 ## 0.5.2
 
 * io: `GoogleDriveBackupService` tries the silent reattach at most once

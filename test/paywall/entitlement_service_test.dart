@@ -16,20 +16,21 @@ class _FakePurchaseDetails extends Fake implements PurchaseDetails {}
 const _products = StoreProducts(
   lifetimeUnlock: 'app_unlimited',
   premiumSubscription: 'app_premium_annual',
-  tipLabels: {
-    'app_tip_small': 'Espresso',
-    'app_tip_large': 'The whole pot',
-  },
+  tipLabels: {'app_tip_small': 'Espresso', 'app_tip_large': 'The whole pot'},
 );
 
-PurchaseDetails _purchase(String id, PurchaseStatus status,
-    {bool pendingComplete = false}) {
+PurchaseDetails _purchase(
+  String id,
+  PurchaseStatus status, {
+  bool pendingComplete = false,
+}) {
   final details = PurchaseDetails(
     productID: id,
     verificationData: PurchaseVerificationData(
-        localVerificationData: 'test',
-        serverVerificationData: 'test',
-        source: 'test'),
+      localVerificationData: 'test',
+      serverVerificationData: 'test',
+      source: 'test',
+    ),
     transactionDate: null,
     status: status,
   );
@@ -38,18 +39,21 @@ PurchaseDetails _purchase(String id, PurchaseStatus status,
 }
 
 ProductDetails _productDetails(String id, String price) => ProductDetails(
-    id: id,
-    title: id,
-    description: id,
-    price: price,
-    rawPrice: 1.0,
-    currencyCode: 'USD');
+  id: id,
+  title: id,
+  description: id,
+  price: price,
+  rawPrice: 1.0,
+  currencyCode: 'USD',
+);
 
 /// Builds the per-offer [GooglePlayProductDetails] list the Android
 /// plugin returns for one subscription product, one entry per
 /// (basePlanId, offerId, price) tuple — offerId null = the base offer.
 List<GooglePlayProductDetails> _subscriptionOffers(
-    String productId, List<(String, String?, String)> offers) {
+  String productId,
+  List<(String, String?, String)> offers,
+) {
   final wrapper = ProductDetailsWrapper(
     description: productId,
     name: productId,
@@ -107,8 +111,9 @@ void main() {
   /// the Android plugin answers (empty batch = nothing owned).
   void restoreReturns(List<String> ids) {
     when(() => iap.restorePurchases()).thenAnswer((_) async {
-      purchases.add(
-          [for (final id in ids) _purchase(id, PurchaseStatus.restored)]);
+      purchases.add([
+        for (final id in ids) _purchase(id, PurchaseStatus.restored),
+      ]);
     });
   }
 
@@ -128,8 +133,9 @@ void main() {
       final service = makeService();
       expect(await service.isUnlimited(), isFalse);
 
-      purchases.add(
-          [_purchase(_products.lifetimeUnlock!, PurchaseStatus.purchased)]);
+      purchases.add([
+        _purchase(_products.lifetimeUnlock!, PurchaseStatus.purchased),
+      ]);
       await pumpEventQueue();
 
       expect(await service.isUnlimited(), isTrue);
@@ -138,18 +144,20 @@ void main() {
       service.dispose();
     });
 
-    test('a premium purchase entitles both premium and unlimited',
-        () async {
+    test('a premium purchase entitles both premium and unlimited', () async {
       final service = makeService();
 
       purchases.add([
-        _purchase(_products.premiumSubscription!, PurchaseStatus.purchased)
+        _purchase(_products.premiumSubscription!, PurchaseStatus.purchased),
       ]);
       await pumpEventQueue();
 
       expect(await service.isPremium(), isTrue);
-      expect(await service.isUnlimited(), isTrue,
-          reason: 'premium includes the unlock');
+      expect(
+        await service.isUnlimited(),
+        isTrue,
+        reason: 'premium includes the unlock',
+      );
       service.dispose();
     });
 
@@ -159,8 +167,9 @@ void main() {
       final sub = service.watchUnlimited().listen(seen.add);
       await pumpEventQueue();
 
-      purchases.add(
-          [_purchase(_products.lifetimeUnlock!, PurchaseStatus.purchased)]);
+      purchases.add([
+        _purchase(_products.lifetimeUnlock!, PurchaseStatus.purchased),
+      ]);
       await pumpEventQueue();
 
       expect(seen.first, isFalse);
@@ -186,8 +195,10 @@ void main() {
       final service = makeService();
 
       final purchase = _purchase(
-          _products.lifetimeUnlock!, PurchaseStatus.purchased,
-          pendingComplete: true);
+        _products.lifetimeUnlock!,
+        PurchaseStatus.purchased,
+        pendingComplete: true,
+      );
       purchases.add([purchase]);
       await pumpEventQueue();
 
@@ -213,15 +224,16 @@ void main() {
       when(() => iap.isAvailable()).thenAnswer((_) async => false);
       final service = makeService();
 
-      expect(service.restorePurchases,
-          throwsA(isA<StoreUnavailableException>()));
+      expect(
+        service.restorePurchases,
+        throwsA(isA<StoreUnavailableException>()),
+      );
       service.dispose();
     });
   });
 
   group('refreshEntitlements (cache expiry)', () {
-    test('a lapsed subscription clears cached premium and re-gates',
-        () async {
+    test('a lapsed subscription clears cached premium and re-gates', () async {
       await kv.setBool('entitlement.premium', true);
       restoreReturns([]);
       final service = makeService();
@@ -269,13 +281,14 @@ void main() {
       service.dispose();
     });
 
-    test('iOS per-transaction restore keeps an active subscription',
-        () async {
+    test('iOS per-transaction restore keeps an active subscription', () async {
       // StoreKit 2 spreads a multi-entitlement restore over separate
       // events; the refresh must judge the union, not the first event.
       await kv.setBool('entitlement.premium', true);
-      restoreReturnsPerTransaction(
-          [_products.lifetimeUnlock!, _products.premiumSubscription!]);
+      restoreReturnsPerTransaction([
+        _products.lifetimeUnlock!,
+        _products.premiumSubscription!,
+      ]);
       final service = makeService();
 
       await service.refreshEntitlements();
@@ -284,22 +297,25 @@ void main() {
       service.dispose();
     });
 
-    test('iOS restore with nothing owned (zero events) clears premium',
-        () async {
-      await kv.setBool('entitlement.premium', true);
-      restoreReturnsPerTransaction([]);
-      final service = makeService();
+    test(
+      'iOS restore with nothing owned (zero events) clears premium',
+      () async {
+        await kv.setBool('entitlement.premium', true);
+        restoreReturnsPerTransaction([]);
+        final service = makeService();
 
-      await service.refreshEntitlements();
+        await service.refreshEntitlements();
 
-      expect(await service.isPremium(), isFalse);
-      service.dispose();
-    });
+        expect(await service.isPremium(), isFalse);
+        service.dispose();
+      },
+    );
 
     test('a billing error keeps the cached entitlement', () async {
       await kv.setBool('entitlement.premium', true);
-      when(() => iap.restorePurchases())
-          .thenAnswer((_) async => throw Exception('billing error'));
+      when(
+        () => iap.restorePurchases(),
+      ).thenAnswer((_) async => throw Exception('billing error'));
       final service = makeService();
 
       await service.refreshEntitlements();
@@ -311,13 +327,16 @@ void main() {
 
   group('prices and tips', () {
     void productQueryReturns(List<ProductDetails> details) {
-      when(() => iap.queryProductDetails(any())).thenAnswer((_) async =>
-          ProductDetailsResponse(productDetails: details, notFoundIDs: []));
+      when(() => iap.queryProductDetails(any())).thenAnswer(
+        (_) async =>
+            ProductDetailsResponse(productDetails: details, notFoundIDs: []),
+      );
     }
 
     test('unlimitedPrice comes from the store', () async {
-      productQueryReturns(
-          [_productDetails(_products.lifetimeUnlock!, r'$6.99')]);
+      productQueryReturns([
+        _productDetails(_products.lifetimeUnlock!, r'$6.99'),
+      ]);
       final service = makeService();
 
       expect(await service.unlimitedPrice(), r'$6.99');
@@ -373,8 +392,9 @@ void main() {
       final errors = <String>[];
       final sub = service.storeErrors.listen(errors.add);
 
-      purchases
-          .add([_purchase(_products.lifetimeUnlock!, PurchaseStatus.error)]);
+      purchases.add([
+        _purchase(_products.lifetimeUnlock!, PurchaseStatus.error),
+      ]);
       await pumpEventQueue();
 
       expect(errors, hasLength(1));
@@ -384,8 +404,9 @@ void main() {
     });
 
     test('a swallowed refresh failure reports on storeErrors', () async {
-      when(() => iap.restorePurchases())
-          .thenAnswer((_) async => throw Exception('billing error'));
+      when(
+        () => iap.restorePurchases(),
+      ).thenAnswer((_) async => throw Exception('billing error'));
       final service = makeService();
       final errors = <String>[];
       final sub = service.storeErrors.listen(errors.add);
@@ -404,8 +425,9 @@ void main() {
       final errors = <String>[];
       final sub = service.storeErrors.listen(errors.add);
 
-      purchases.add(
-          [_purchase(_products.lifetimeUnlock!, PurchaseStatus.purchased)]);
+      purchases.add([
+        _purchase(_products.lifetimeUnlock!, PurchaseStatus.purchased),
+      ]);
       await pumpEventQueue();
 
       expect(errors, isEmpty);
@@ -416,26 +438,28 @@ void main() {
 
   group('buy flows', () {
     test('buyUnlimited launches a non-consumable purchase', () async {
-      when(() => iap.queryProductDetails(any())).thenAnswer((_) async =>
-          ProductDetailsResponse(
-              productDetails: [
-                _productDetails(_products.lifetimeUnlock!, r'$6.99')
-              ],
-              notFoundIDs: []));
-      when(() => iap.buyNonConsumable(purchaseParam: any(named: 'purchaseParam')))
-          .thenAnswer((_) async => true);
+      when(() => iap.queryProductDetails(any())).thenAnswer(
+        (_) async => ProductDetailsResponse(
+          productDetails: [
+            _productDetails(_products.lifetimeUnlock!, r'$6.99'),
+          ],
+          notFoundIDs: [],
+        ),
+      );
+      when(
+        () => iap.buyNonConsumable(purchaseParam: any(named: 'purchaseParam')),
+      ).thenAnswer((_) async => true);
       final service = makeService();
 
       await service.buyUnlimited();
 
-      verify(() =>
-              iap.buyNonConsumable(purchaseParam: any(named: 'purchaseParam')))
-          .called(1);
+      verify(
+        () => iap.buyNonConsumable(purchaseParam: any(named: 'purchaseParam')),
+      ).called(1);
       service.dispose();
     });
 
-    test('buyUnlimited without the store throws StoreUnavailable',
-        () async {
+    test('buyUnlimited without the store throws StoreUnavailable', () async {
       when(() => iap.isAvailable()).thenAnswer((_) async => false);
       final service = makeService();
 
@@ -451,47 +475,54 @@ void main() {
     );
 
     void storeOffers(List<ProductDetails> offers) {
-      when(() => iap.queryProductDetails(any())).thenAnswer((_) async =>
-          ProductDetailsResponse(productDetails: offers, notFoundIDs: []));
+      when(() => iap.queryProductDetails(any())).thenAnswer(
+        (_) async =>
+            ProductDetailsResponse(productDetails: offers, notFoundIDs: []),
+      );
     }
 
-    test('premiumPlans returns catalog order with per-plan prices',
-        () async {
+    test('premiumPlans returns catalog order with per-plan prices', () async {
       // Store answers yearly-first; catalog order must win.
-      storeOffers(_subscriptionOffers('app_pro', [
-        ('yearly', null, r'$12.99'),
-        ('monthly', null, r'$1.99'),
-      ]));
+      storeOffers(
+        _subscriptionOffers('app_pro', [
+          ('yearly', null, r'$12.99'),
+          ('monthly', null, r'$1.99'),
+        ]),
+      );
       final service = makeService(products: multiPlan);
 
       final plans = await service.premiumPlans();
 
-      expect([for (final p in plans) (p.id, p.label, p.price)], [
-        ('monthly', 'Monthly', r'$1.99'),
-        ('yearly', 'Yearly', r'$12.99'),
-      ]);
+      expect(
+        [for (final p in plans) (p.id, p.label, p.price)],
+        [('monthly', 'Monthly', r'$1.99'), ('yearly', 'Yearly', r'$12.99')],
+      );
       service.dispose();
     });
 
-    test('premiumPlans prefers the base offer over a discounted offer',
-        () async {
-      storeOffers(_subscriptionOffers('app_pro', [
-        ('monthly', 'intro-week', r'$0.99'),
-        ('monthly', null, r'$1.99'),
-        ('yearly', null, r'$12.99'),
-      ]));
-      final service = makeService(products: multiPlan);
+    test(
+      'premiumPlans prefers the base offer over a discounted offer',
+      () async {
+        storeOffers(
+          _subscriptionOffers('app_pro', [
+            ('monthly', 'intro-week', r'$0.99'),
+            ('monthly', null, r'$1.99'),
+            ('yearly', null, r'$12.99'),
+          ]),
+        );
+        final service = makeService(products: multiPlan);
 
-      final plans = await service.premiumPlans();
+        final plans = await service.premiumPlans();
 
-      expect(plans.first.price, r'$1.99');
-      service.dispose();
-    });
+        expect(plans.first.price, r'$1.99');
+        service.dispose();
+      },
+    );
 
     test('premiumPlans skips plans the store does not offer', () async {
-      storeOffers(_subscriptionOffers('app_pro', [
-        ('monthly', null, r'$1.99'),
-      ]));
+      storeOffers(
+        _subscriptionOffers('app_pro', [('monthly', null, r'$1.99')]),
+      );
       final service = makeService(products: multiPlan);
 
       final plans = await service.premiumPlans();
@@ -502,51 +533,60 @@ void main() {
     });
 
     test('buyPremium(planId) buys that base plan\'s offer', () async {
-      storeOffers(_subscriptionOffers('app_pro', [
-        ('monthly', null, r'$1.99'),
-        ('yearly', null, r'$12.99'),
-      ]));
-      when(() =>
-              iap.buyNonConsumable(purchaseParam: any(named: 'purchaseParam')))
-          .thenAnswer((_) async => true);
+      storeOffers(
+        _subscriptionOffers('app_pro', [
+          ('monthly', null, r'$1.99'),
+          ('yearly', null, r'$12.99'),
+        ]),
+      );
+      when(
+        () => iap.buyNonConsumable(purchaseParam: any(named: 'purchaseParam')),
+      ).thenAnswer((_) async => true);
       final service = makeService(products: multiPlan);
 
       await service.buyPremium(planId: 'yearly');
 
-      final param = verify(() => iap.buyNonConsumable(
-              purchaseParam: captureAny(named: 'purchaseParam')))
-          .captured
-          .single as PurchaseParam;
+      final param =
+          verify(
+                () => iap.buyNonConsumable(
+                  purchaseParam: captureAny(named: 'purchaseParam'),
+                ),
+              ).captured.single
+              as PurchaseParam;
       final bought = param.productDetails as GooglePlayProductDetails;
       expect(bought.offerToken, 'token-yearly-base');
       service.dispose();
     });
 
     test('buyPremium with an unknown planId is an ArgumentError', () async {
-      storeOffers(_subscriptionOffers('app_pro', [
-        ('monthly', null, r'$1.99'),
-      ]));
+      storeOffers(
+        _subscriptionOffers('app_pro', [('monthly', null, r'$1.99')]),
+      );
       final service = makeService(products: multiPlan);
 
-      expect(() => service.buyPremium(planId: 'weekly'),
-          throwsA(isA<ArgumentError>()));
+      expect(
+        () => service.buyPremium(planId: 'weekly'),
+        throwsA(isA<ArgumentError>()),
+      );
       service.dispose();
     });
 
-    test('premiumPlans without configured labels derives from the store',
-        () async {
-      const singlePlan = StoreProducts(premiumSubscription: 'app_pro');
-      // Off Android the plugin returns a plain ProductDetails.
-      storeOffers([_productDetails('app_pro', r'$12.99')]);
-      final service = makeService(products: singlePlan);
+    test(
+      'premiumPlans without configured labels derives from the store',
+      () async {
+        const singlePlan = StoreProducts(premiumSubscription: 'app_pro');
+        // Off Android the plugin returns a plain ProductDetails.
+        storeOffers([_productDetails('app_pro', r'$12.99')]);
+        final service = makeService(products: singlePlan);
 
-      final plans = await service.premiumPlans();
+        final plans = await service.premiumPlans();
 
-      expect(plans, hasLength(1));
-      expect(plans.single.id, 'app_pro');
-      expect(plans.single.price, r'$12.99');
-      service.dispose();
-    });
+        expect(plans, hasLength(1));
+        expect(plans.single.id, 'app_pro');
+        expect(plans.single.price, r'$12.99');
+        service.dispose();
+      },
+    );
   });
 
   group('an app without a lifetime unlock', () {
@@ -578,6 +618,114 @@ void main() {
 
       expect(await service.isPremium(), isTrue);
       expect(await service.isUnlimited(), isTrue);
+      service.dispose();
+    });
+  });
+  group('per-plan subscription products (App Store shape)', () {
+    // The App Store has no base plans: each plan is its own product
+    // inside one subscription group.
+    const perPlan = StoreProducts(
+      premiumPlanLabels: {'monthly': 'Monthly', 'yearly': 'Yearly'},
+      premiumPlanProducts: {
+        'monthly': 'app_pro_monthly',
+        'yearly': 'app_pro_yearly',
+      },
+    );
+
+    void storeProducts(List<ProductDetails> products) {
+      when(() => iap.queryProductDetails(any())).thenAnswer(
+        (_) async =>
+            ProductDetailsResponse(productDetails: products, notFoundIDs: []),
+      );
+    }
+
+    test('the catalog knows every premium product id', () {
+      expect(perPlan.sellsPremium, isTrue);
+      expect(perPlan.premiumProductIds, {'app_pro_monthly', 'app_pro_yearly'});
+      expect(perPlan.all, ['app_pro_monthly', 'app_pro_yearly']);
+    });
+
+    test('premiumPlans queries the plan products, catalog order', () async {
+      storeProducts([
+        _productDetails('app_pro_yearly', r'$12.99'),
+        _productDetails('app_pro_monthly', r'$1.99'),
+      ]);
+      final service = makeService(products: perPlan);
+
+      final plans = await service.premiumPlans();
+
+      expect(
+        [for (final p in plans) (p.id, p.label, p.price)],
+        [('monthly', 'Monthly', r'$1.99'), ('yearly', 'Yearly', r'$12.99')],
+      );
+      final queried =
+          verify(() => iap.queryProductDetails(captureAny())).captured.first
+              as Set<String>;
+      expect(queried, {'app_pro_monthly', 'app_pro_yearly'});
+      service.dispose();
+    });
+
+    test('buyPremium(planId) buys the plan\'s own product', () async {
+      storeProducts([
+        _productDetails('app_pro_monthly', r'$1.99'),
+        _productDetails('app_pro_yearly', r'$12.99'),
+      ]);
+      when(
+        () => iap.buyNonConsumable(purchaseParam: any(named: 'purchaseParam')),
+      ).thenAnswer((_) async => true);
+      final service = makeService(products: perPlan);
+
+      await service.buyPremium(planId: 'yearly');
+
+      final param =
+          verify(
+                () => iap.buyNonConsumable(
+                  purchaseParam: captureAny(named: 'purchaseParam'),
+                ),
+              ).captured.single
+              as PurchaseParam;
+      expect(param.productDetails.id, 'app_pro_yearly');
+      service.dispose();
+    });
+
+    test('owning either plan product is premium', () async {
+      final service = makeService(products: perPlan);
+
+      purchases.add([_purchase('app_pro_yearly', PurchaseStatus.purchased)]);
+      await pumpEventQueue();
+
+      expect(await service.isPremium(), isTrue);
+      expect(await service.isUnlimited(), isTrue);
+      service.dispose();
+    });
+
+    test('refresh keeps premium when a plan product is restored', () async {
+      await kv.setBool('entitlement.premium', true);
+      restoreReturnsPerTransaction(['app_pro_monthly']);
+      final service = makeService(products: perPlan);
+
+      await service.refreshEntitlements();
+
+      expect(await service.isPremium(), isTrue);
+      service.dispose();
+    });
+
+    test('refresh clears premium when no plan product comes back', () async {
+      await kv.setBool('entitlement.premium', true);
+      restoreReturnsPerTransaction([]);
+      final service = makeService(products: perPlan);
+
+      await service.refreshEntitlements();
+
+      expect(await service.isPremium(), isFalse);
+      service.dispose();
+    });
+
+    test('premiumPrice is the first plan product\'s price', () async {
+      storeProducts([_productDetails('app_pro_monthly', r'$1.99')]);
+      final service = makeService(products: perPlan);
+
+      expect(await service.premiumPrice(), r'$1.99');
       service.dispose();
     });
   });

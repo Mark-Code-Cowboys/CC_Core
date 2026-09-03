@@ -89,7 +89,11 @@ class StoreEntitlementService implements EntitlementService {
   /// Creates the service and starts listening to the purchase stream.
   /// [iap] is injectable for tests; defaults to the real plugin.
   StoreEntitlementService(this._kv, this._products, {InAppPurchase? iap})
-    : _iap = iap ?? InAppPurchase.instance {
+    : _iap = iap ?? InAppPurchase.instance,
+      assert(
+        _products.sellsAnyEntitlement,
+        'An app must sell an unlock or a subscription (or both).',
+      ) {
     _subscription = _iap.purchaseStream.listen(_onPurchases);
   }
 
@@ -137,7 +141,7 @@ class StoreEntitlementService implements EntitlementService {
         await _kv.setBool(_cacheKey, true);
         _changes.add(true);
       }
-      if (owned && purchase.productID == _products.premiumSubscription) {
+      if (owned && _products.premiumProductIds.contains(purchase.productID)) {
         await _kv.setBool(_premiumCacheKey, true);
         _premiumChanges.add(true);
       }
@@ -154,8 +158,8 @@ class StoreEntitlementService implements EntitlementService {
   @override
   Future<void> refreshEntitlements() async {
     // No subscription product means nothing can lapse.
-    final premiumId = _products.premiumSubscription;
-    if (premiumId == null) return;
+    if (!_products.sellsPremium) return;
+    final premiumIds = _products.premiumProductIds;
     try {
       if (!await _iap.isAvailable()) return;
       final restored = _restoredDuringRefresh = <String>{};
@@ -170,7 +174,7 @@ class StoreEntitlementService implements EntitlementService {
         lastCount = restored.length;
         await Future<void>.delayed(const Duration(milliseconds: 300));
       }
-      if (!restored.contains(premiumId) &&
+      if (restored.intersection(premiumIds).isEmpty &&
           (await _kv.getBool(_premiumCacheKey) ?? false)) {
         await _kv.setBool(_premiumCacheKey, false);
         // watchUnlimited merges this stream, so a lapse also re-gates
@@ -201,8 +205,7 @@ class StoreEntitlementService implements EntitlementService {
 
   @override
   Future<bool> isPremium() async =>
-      _products.premiumSubscription != null &&
-      (await _kv.getBool(_premiumCacheKey) ?? false);
+      _products.sellsPremium && (await _kv.getBool(_premiumCacheKey) ?? false);
 
   @override
   Stream<bool> watchPremium() async* {
@@ -218,14 +221,23 @@ class StoreEntitlementService implements EntitlementService {
   }
 
   /// Every store offer for the subscription. Google Play returns one
-  /// [ProductDetails] per base-plan offer under the same product id.
+  /// [ProductDetails] per base-plan offer under the same product id;
+  /// a store selling one product per plan returns one per product.
   Future<List<ProductDetails>> _premiumOffers() async {
-    final premiumId = _products.premiumSubscription;
-    if (premiumId == null) return const [];
+    if (!_products.sellsPremium) return const [];
     if (!await _iap.isAvailable()) return const [];
-    final response = await _iap.queryProductDetails({premiumId});
+    final response = await _iap.queryProductDetails(
+      _products.premiumProductIds,
+    );
     return response.productDetails;
   }
+
+  /// True when [details] sells the plan [planId]: a Play base plan of
+  /// that id, or the plan's own product on stores without base plans.
+  bool _sellsPlan(ProductDetails details, String planId) =>
+      _basePlanIdOf(details) == planId ||
+      details.id == planId ||
+      details.id == _products.premiumPlanProducts[planId];
 
   /// The Play base plan id behind [details], null on platforms that
   /// don't expose base plans (a StoreKit subscription is one plan).
@@ -252,7 +264,7 @@ class StoreEntitlementService implements EntitlementService {
   ProductDetails? _offerForPlan(List<ProductDetails> offers, String planId) {
     final ofPlan = [
       for (final o in offers)
-        if (_basePlanIdOf(o) == planId || o.id == planId) o,
+        if (_sellsPlan(o, planId)) o,
     ];
     if (ofPlan.isEmpty) return null;
     return ofPlan.firstWhere(_isBaseOffer, orElse: () => ofPlan.first);
@@ -264,7 +276,7 @@ class StoreEntitlementService implements EntitlementService {
 
   @override
   Future<String?> premiumPrice() async =>
-      (await _product(_products.premiumSubscription))?.price;
+      (await _premiumOffers()).firstOrNull?.price;
 
   @override
   Future<List<SubscriptionPlan>> premiumPlans() async {
@@ -285,7 +297,7 @@ class StoreEntitlementService implements EntitlementService {
     }
     return [
       for (final MapEntry(key: planId, value: label) in labels.entries)
-        if (offers.any((o) => _basePlanIdOf(o) == planId || o.id == planId))
+        if (offers.any((o) => _sellsPlan(o, planId)))
           SubscriptionPlan(
             id: planId,
             label: label,
@@ -323,7 +335,7 @@ class StoreEntitlementService implements EntitlementService {
 
   @override
   Future<void> buyPremium({String? planId}) async {
-    if (_products.premiumSubscription == null) {
+    if (!_products.sellsPremium) {
       throw StateError('This app has no premium subscription product.');
     }
     final offers = await _premiumOffers();
