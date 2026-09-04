@@ -1,3 +1,13 @@
+## 0.6.1
+
+* text: `FuzzyMatch.suggest` no longer credits a candidate token that is
+  only a fragment of the query token as a near-exact prefix match — the
+  "st" of "St. john's wort" scored 0.95 against "strips" and "style",
+  so Trace Elements' menu-scan description fallback resolved a fajitas
+  description to the herb. A candidate token must now cover at least
+  60% of the query token (scaled score), while the query-begins-the-
+  candidate direction (typing "st" for "strawberries") is unchanged.
+
 ## 0.6.0
 
 * paywall: subscriptions sold as one product per plan. The App Store

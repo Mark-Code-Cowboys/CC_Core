@@ -100,11 +100,25 @@ class FuzzyMatch {
     return avg >= 0.55 ? avg : 0.0;
   }
 
+  /// A candidate token that is only a fragment of the query token —
+  /// "st" (from "St. john's wort") against "strips" or "style" — must
+  /// not score as a match; it has to cover this much of the query
+  /// token. The other direction (a query token that begins a candidate
+  /// token) is the user typing the start of a word and stays fully
+  /// credited.
+  static const _minFragmentCoverage = 0.6;
+
+  /// [a] is the query's token, [b] the candidate's.
   static double _tokenSimilarity(String a, String b) {
     if (a == b) return 1.0;
     if (a.length < 2 || b.length < 2) return 0.0;
-    if (b.startsWith(a) || a.startsWith(b)) return 0.95;
-    if (b.contains(a) || a.contains(b)) return 0.8;
+    if (b.startsWith(a)) return 0.95;
+    if (b.contains(a)) return 0.8;
+    if (a.startsWith(b) || a.contains(b)) {
+      final coverage = b.length / a.length;
+      if (coverage < _minFragmentCoverage) return 0.0;
+      return (a.startsWith(b) ? 0.95 : 0.8) * coverage;
+    }
     final dist = _levenshtein(a, b);
     final maxLen = a.length > b.length ? a.length : b.length;
     final sim = 1.0 - dist / maxLen;

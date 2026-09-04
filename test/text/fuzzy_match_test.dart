@@ -68,6 +68,33 @@ void main() {
           contains('Apples (Granny Smith)'));
     });
 
+    test('a short candidate token is not a prefix match for a long query',
+        () {
+      // Trace Elements bug: a menu description's "strips" / "style"
+      // resolved to "St. john's wort, dry" because its token "st" was
+      // credited as a prefix of the query word.
+      const herb = "St. john's wort, dry";
+      for (final word in ['strips', 'style', 'stone', 'steak']) {
+        expect(FuzzyMatch.suggest(word, [herb]), isEmpty, reason: word);
+      }
+      expect(FuzzyMatch.suggest('wort', [herb]), [herb],
+          reason: 'a whole token of the candidate still matches');
+    });
+
+    test('typing the start of a word still suggests it', () {
+      expect(FuzzyMatch.suggest('st', ['strawberries', 'tofu']),
+          ['strawberries']);
+      expect(FuzzyMatch.suggest('straw', ['strawberries, raw']),
+          ['strawberries, raw']);
+    });
+
+    test('a candidate token covering most of the query still matches',
+        () {
+      expect(FuzzyMatch.suggest('tomatoes', ['tomato, raw']),
+          ['tomato, raw']);
+      expect(FuzzyMatch.suggest('apples', ['apple, raw']), ['apple, raw']);
+    });
+
     test('realistic food-db scenario', () {
       final db = [
         'apple, raw, with skin',

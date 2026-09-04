@@ -1,6 +1,6 @@
 name: cc_core
 description: "Shared core library for Code Cowboys apps — privacy-first, local-only journal/log building blocks."
-version: 0.6.0
+version: 0.6.1
 repository: https://github.com/Mark-Code-Cowboys/cc_core
 publish_to: none
 
