@@ -1,6 +1,6 @@
 name: cc_core
 description: "Shared core library for Code Cowboys apps — privacy-first, local-only journal/log building blocks."
-version: 0.7.0
+version: 0.8.0
 repository: https://github.com/Mark-Code-Cowboys/cc_core
 publish_to: none
 
@@ -13,6 +13,10 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  # scan module: on-device capture + OCR, same versions Table Encore
+  # already ships (the module was extracted from it).
+  google_mlkit_document_scanner: ^0.6.1
+  google_mlkit_text_recognition: ^0.17.1
   google_sign_in: ^7.2.0
   http: ^1.6.0
   icloud_storage: ^2.2.0

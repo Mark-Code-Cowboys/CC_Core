@@ -1,3 +1,24 @@
+## 0.8.0
+
+* scan: the module exists — on-device photo transcription extracted
+  from Table Encore's OCR core for Course Ledger's scorecard import.
+  `OcrLine` + `mergeOcrRows` (row re-assembly), `DocumentScanService`
+  (now with multi-page `scanAll` for batch flows) with the ML Kit
+  implementation, `TextRecognitionService` (Table Encore's
+  `ReceiptOcrService`, renamed — nothing in it was receipt-specific)
+  with ML Kit implementation and canned fakes for both services. Adds the two
+  `google_mlkit_*` dependencies Table Encore already ships. Guardrail
+  documented on the barrel: transcription only — parsers and confirm
+  UIs never suggest, correct, or flag values.
+* notebook_import: the batch flavor — `batchTranscribe` (OCR every
+  captured page through an injected parser; unreadable pages counted,
+  unparseable ones skipped) and `BatchReviewScreen` (check-off/edit
+  review list with one bulk-confirm button).
+* io: `parseCsv`/`CsvDocument` — forgiving RFC 4180 parsing for the
+  import-mapper flows ("spreadsheet keepers").
+* Table Encore adoption (later, no rush): its `core/ocr/` types and
+  ML Kit services are now duplicates of the scan module.
+
 ## 0.7.0
 
 * paywall: `LifetimeTally` — how many of the gated subject were ever
