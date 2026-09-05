@@ -1,3 +1,9 @@
+## 0.14.0
+
+* journal: `RatingStars` — the 1-5 star input/display (tap the current
+  star to clear; optional everywhere), extracted from Course Ledger
+  when Hitch Post became its second consumer.
+
 ## 0.13.0
 
 * trends: `CalendarMonthGrid` + `TrendWindowNav`, extracted from Trace

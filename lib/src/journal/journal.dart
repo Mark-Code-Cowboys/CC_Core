@@ -9,3 +9,4 @@ export 'journal_repository.dart';
 export 'journal_tables.dart';
 export 'photo_attachment_strip.dart';
 export 'photo_store.dart';
+export 'rating_stars.dart';
