@@ -1,3 +1,14 @@
+## 0.7.0
+
+* paywall: `LifetimeTally` — how many of the gated subject were ever
+  created on this device, persisted via `KeyValueStore` under an
+  injected key. Extracted from Table Encore's `RestaurantTally` when
+  Course Ledger became its second consumer: deleting never lowers it
+  (a free slot can't be recycled by delete-and-re-add), `recordCreated`
+  floors at the live row count for pre-tally installs, `raiseTo` lets
+  backup restores carry the figure between phones. Table Encore can
+  adopt it by passing its existing `restaurants_created_lifetime` key.
+
 ## 0.6.1
 
 * text: `FuzzyMatch.suggest` no longer credits a candidate token that is
