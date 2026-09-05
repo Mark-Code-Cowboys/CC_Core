@@ -1,3 +1,10 @@
+## 0.16.1
+
+* text: `parseLooseDates` — every date printed on a line, in print
+  order. Notebook pages and receipts put ranges on one line
+  ("6/12/2026 - 6/15/2026"), which `parseLooseDate`'s first-match
+  contract can't see past. Found by Hitch Post Phase D's page parser.
+
 ## 0.16.0
 
 * text: `parseLooseDate` — reads a date out of free text (numeric

@@ -11,6 +11,12 @@ void main() {
     expect(parseLooseDate('15/6/2026'), DateTime(2026, 6, 15)); // day-first
   });
 
+  test('parseLooseDates reads a whole range row in print order', () {
+    expect(parseLooseDates('6/12/2026 - 6/15/2026'),
+        [DateTime(2026, 6, 12), DateTime(2026, 6, 15)]);
+    expect(parseLooseDates('no dates'), isEmpty);
+  });
+
   test('never invents a date', () {
     expect(parseLooseDate('no date here'), isNull);
     expect(parseLooseDate('2/30/2026'), isNull); // rollover rejected
