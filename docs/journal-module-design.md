@@ -1,4 +1,15 @@
-# journal/ module — design proposal (decision needed)
+# journal/ module — design proposal (DECIDED: option B, 2026-09-05)
+
+**Outcome:** option B shipped in cc_core 0.12.0 — chosen for the coming
+fleet of apps needing the expanded functionality, with the shipped
+apps' installed base still minimal. Implementation notes vs. the
+sketch below: drift can't analyze table classes across package
+boundaries in the default build mode, so consumers register thin local
+subclasses of the shared tables (with their own @UseRowClass
+annotation — annotations don't inherit) and FKs ride as raw-SQL
+customConstraints. Course Ledger is the proving consumer (schema v2
+migration, tested). Table Encore adoption remains open — its dish-level
+double ratings and single-photo column need their own design read.
 
 The last empty module. Factory Phase 4 said "extract entry/tag/rating/
 photo models and Drift repo from Table Encore; apps keep their domain
@@ -62,4 +73,4 @@ app's own tables; core owns what golfers and diners attach to it."
 Close the factory Phase 4 line item with that scope; revisit B only if
 a future app needs cross-domain search.
 
-**Waiting on a call before any code.**
+(Original decision framing kept below for the record.)

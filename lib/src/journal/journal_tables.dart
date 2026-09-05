@@ -32,15 +32,23 @@ class JournalPhotos extends Table {
   /// Row id.
   IntColumn get id => integer().autoIncrement()();
 
-  /// Owning entry; rows cascade away with it.
-  IntColumn get entryId =>
-      integer().references(JournalEntries, #id, onDelete: KeyAction.cascade)();
+  /// Owning entry; rows cascade away with it (FK via
+  /// [customConstraints] — raw SQL so the constraint survives being
+  /// registered through app-local subclasses, where drift can't
+  /// resolve a cross-package class reference).
+  IntColumn get entryId => integer()();
 
   /// File name under the app's photo store.
   TextColumn get path => text()();
 
   /// Optional caption.
   TextColumn get caption => text().nullable()();
+
+  @override
+  List<String> get customConstraints => [
+        'FOREIGN KEY (entry_id) REFERENCES journal_entries (id) '
+            'ON DELETE CASCADE',
+      ];
 }
 
 /// Free-form tags on an entry, unique per entry.
@@ -49,9 +57,9 @@ class JournalTags extends Table {
   /// Row id.
   IntColumn get id => integer().autoIncrement()();
 
-  /// Owning entry; rows cascade away with it.
-  IntColumn get entryId =>
-      integer().references(JournalEntries, #id, onDelete: KeyAction.cascade)();
+  /// Owning entry; rows cascade away with it (raw-SQL FK, see
+  /// [JournalPhotos.entryId]).
+  IntColumn get entryId => integer()();
 
   /// The tag text.
   TextColumn get tag => text().withLength(min: 1, max: 60)();
@@ -59,6 +67,12 @@ class JournalTags extends Table {
   @override
   List<Set<Column>> get uniqueKeys => [
         {entryId, tag},
+      ];
+
+  @override
+  List<String> get customConstraints => [
+        'FOREIGN KEY (entry_id) REFERENCES journal_entries (id) '
+            'ON DELETE CASCADE',
       ];
 }
 
