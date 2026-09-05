@@ -6,7 +6,7 @@
   (now with multi-page `scanAll` for batch flows) with the ML Kit
   implementation, `TextRecognitionService` (Table Encore's
   `ReceiptOcrService`, renamed — nothing in it was receipt-specific)
-  with ML Kit implementation and canned fakes for both services. Adds the two
+  with ML Kit implementation and a canned-lines fake. Adds the two
   `google_mlkit_*` dependencies Table Encore already ships. Guardrail
   documented on the barrel: transcription only — parsers and confirm
   UIs never suggest, correct, or flag values.
@@ -18,7 +18,6 @@
   import-mapper flows ("spreadsheet keepers").
 * Table Encore adoption (later, no rush): its `core/ocr/` types and
   ML Kit services are now duplicates of the scan module.
-
 ## 0.7.0
 
 * paywall: `LifetimeTally` — how many of the gated subject were ever
