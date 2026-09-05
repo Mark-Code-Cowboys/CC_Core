@@ -1,3 +1,24 @@
+## 0.17.0
+
+Closes the five duplicate-shedding candidates from Hitch Post's 0-G
+sweep (course-ledger docs/cc-core-gaps.md):
+
+* io: `SharePlusLauncher` — the real share-sheet impl (and the
+  share_plus dep) move into core; every app carried the same wrapper.
+* journal: `dumpJournalTables` / `restoreJournalTables` on
+  JournalRepository — the canonical journalEntries/Photos/Tags backup
+  keys all three apps already write, dumped and restored beside
+  `collectMedia`. Restore runs inside the app's transaction and
+  preserves ids.
+* paywall: `ProTeaser` — the free-tier face of a Pro-gated screen
+  (pitch + see-Pro + the never-gated action below the divider),
+  riverpod-free.
+* scan: `captureDocumentPages` — the scanner-or-picker capture
+  preamble (single gallery pick when pageLimit is 1, multi-select
+  otherwise); the paywall gate stays app-side.
+* text: `titleCaseShouted` — the ALL-CAPS print normalizer from the
+  scorecard and notebook-page parsers.
+
 ## 0.16.1
 
 * text: `parseLooseDates` — every date printed on a line, in print

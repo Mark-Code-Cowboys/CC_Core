@@ -10,4 +10,5 @@ export 'free_tier_counter.dart';
 export 'kv_store.dart';
 export 'lifetime_tally.dart';
 export 'paywall_sheet_scaffold.dart';
+export 'pro_teaser.dart';
 export 'store_products.dart';

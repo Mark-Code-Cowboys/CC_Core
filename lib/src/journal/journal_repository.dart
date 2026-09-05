@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 import 'package:stream_transform/stream_transform.dart';
 
+import '../io/backup_archive.dart' show InvalidBackupException;
 import 'journal_tables.dart';
 import 'photo_store.dart';
 
@@ -269,6 +270,96 @@ class JournalRepository<ET extends JournalEntries, PT extends JournalPhotos,
     return [
       for (final row in await entryMatches.get()) row.read(e.id)!,
     ];
+  }
+
+  /// The journal tables as JSON-encodable rows under the fleet's
+  /// canonical backup keys (`journalEntries` / `journalPhotos` /
+  /// `journalTags`), ordered by id. Spread into the app's export map:
+  ///
+  /// ```dart
+  /// {'app': 'HitchPost', ..., ...await journal.dumpJournalTables()}
+  /// ```
+  ///
+  /// Extracted when three apps had written the same three loops.
+  Future<Map<String, List<Map<String, Object?>>>> dumpJournalTables() async {
+    final e = entries.asDslTable;
+    final p = photos.asDslTable;
+    final t = tags.asDslTable;
+    final entryRows = await (_db.select(entries)
+          ..orderBy([(_) => OrderingTerm.asc(e.id)]))
+        .get();
+    final photoRows = await (_db.select(photos)
+          ..orderBy([(_) => OrderingTerm.asc(p.id)]))
+        .get();
+    final tagRows = await (_db.select(tags)
+          ..orderBy([(_) => OrderingTerm.asc(t.id)]))
+        .get();
+    return {
+      'journalEntries': [
+        for (final row in entryRows)
+          {
+            'id': row.id,
+            'notes': row.notes,
+            'rating': row.rating,
+            'createdAt': row.createdAt.toIso8601String(),
+          },
+      ],
+      'journalPhotos': [
+        for (final row in photoRows)
+          {
+            'id': row.id,
+            'entryId': row.entryId,
+            'path': row.path,
+            'caption': row.caption,
+          },
+      ],
+      'journalTags': [
+        for (final row in tagRows)
+          {'id': row.id, 'entryId': row.entryId, 'tag': row.tag},
+      ],
+    };
+  }
+
+  /// Replaces the journal tables with [dumpJournalTables]-shaped rows
+  /// out of a backup's export map (photo and tag rows go with their
+  /// entries via the cascade). Ids are preserved so the app rows'
+  /// journalEntryId references stay stable. Call INSIDE the app's
+  /// restore transaction, before re-inserting app rows. Throws
+  /// [InvalidBackupException] when the three keys aren't lists.
+  Future<void> restoreJournalTables(Map<String, Object?> data) async {
+    final entryRows = data['journalEntries'];
+    final photoRows = data['journalPhotos'];
+    final tagRows = data['journalTags'];
+    if (entryRows is! List || photoRows is! List || tagRows is! List) {
+      throw const InvalidBackupException('Malformed journal tables');
+    }
+    await _db.delete(entries).go();
+    for (final row in entryRows.cast<Map<String, dynamic>>()) {
+      await _db.into(entries).insert(RawValuesInsertable({
+            'id': Variable(row['id'] as int),
+            'notes': Variable(row['notes'] as String?),
+            'rating': Variable(row['rating'] as int?),
+            // Absent in some format-1 upgrades; the column default fills.
+            if (row['createdAt'] != null)
+              'created_at':
+                  Variable(DateTime.parse(row['createdAt'] as String)),
+          }));
+    }
+    for (final row in photoRows.cast<Map<String, dynamic>>()) {
+      await _db.into(photos).insert(RawValuesInsertable({
+            'id': Variable(row['id'] as int),
+            'entry_id': Variable(row['entryId'] as int),
+            'path': Variable(row['path'] as String),
+            'caption': Variable(row['caption'] as String?),
+          }));
+    }
+    for (final row in tagRows.cast<Map<String, dynamic>>()) {
+      await _db.into(tags).insert(RawValuesInsertable({
+            'id': Variable(row['id'] as int),
+            'entry_id': Variable(row['entryId'] as int),
+            'tag': Variable(row['tag'] as String),
+          }));
+    }
   }
 
   /// Every stored photo file that exists, keyed by path — the backup

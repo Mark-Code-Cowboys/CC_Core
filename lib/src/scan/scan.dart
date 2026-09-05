@@ -8,6 +8,7 @@
 /// values the camera didn't see.
 library;
 
+export 'capture_pages.dart';
 export 'document_scan_service.dart';
 export 'fake_document_scan_service.dart';
 export 'mlkit_document_scan_service.dart';
