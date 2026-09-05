@@ -1,3 +1,22 @@
+## 0.9.0
+
+* trends: first real contents, driven by Course Ledger's Phase E —
+  `TrendGate` (charts render only past a minimum point count; below it,
+  the app's nudge line — ledgers, not dashboards), `YearlyBars` (counts
+  per year, gap years shown as zero), `SimpleLineChart` (plain polyline
+  over time, range and endpoint labels only), and `RegionTileGrid` +
+  `usStateTiles` (offline tile-cartogram coverage map, no map tiles or
+  geo data). The Trace Elements calendar-heatmap extraction remains.
+* io: single-file backup archive extracted from Table Encore —
+  `buildBackupArchive`/`readBackupArchive`/`BackupContents`/
+  `InvalidBackupException`, entry names parameterized so Table Encore's
+  `journal.json` + `photos/` backups stay readable; traversal-shaped
+  media names are dropped on read. New dependency: archive (Table
+  Encore's pin).
+* io: `buildCsv` — RFC 4180 encoder, the inverse of `parseCsv`.
+* io: `ShareLauncher` seam (+ `FakeShareLauncher`) extracted from Table
+  Encore; apps keep their share_plus wrapper.
+
 ## 0.8.0
 
 * scan: the module exists — on-device photo transcription extracted

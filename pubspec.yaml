@@ -1,6 +1,6 @@
 name: cc_core
 description: "Shared core library for Code Cowboys apps — privacy-first, local-only journal/log building blocks."
-version: 0.8.0
+version: 0.9.0
 repository: https://github.com/Mark-Code-Cowboys/cc_core
 publish_to: none
 
@@ -11,6 +11,8 @@ environment:
   flutter: ">=1.17.0"
 
 dependencies:
+  # io backup archive (zip build/read), same version Table Encore ships.
+  archive: ^4.0.9
   flutter:
     sdk: flutter
   # scan module: on-device capture + OCR, same versions Table Encore
