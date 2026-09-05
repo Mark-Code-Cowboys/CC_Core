@@ -1,3 +1,11 @@
+## 0.15.0
+
+* paywall: `FreeTierCounter` — the counter card with progress bar and
+  Go-Pro button, extracted from Course Ledger when Hitch Post became
+  the third app to want one. Riverpod-free: the app computes the
+  `FreeLimitUsage` (and hides the widget for entitled users) and
+  handles the tap.
+
 ## 0.14.0
 
 * journal: `RatingStars` — the 1-5 star input/display (tap the current
