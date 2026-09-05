@@ -1,3 +1,11 @@
+## 0.13.0
+
+* trends: `CalendarMonthGrid` + `TrendWindowNav`, extracted from Trace
+  Elements — the factory Phase 4 heatmap line item, honestly scoped:
+  the Sunday-first month alignment math, square-cell layout, and
+  prev/next window nav are shared; everything inside a day cell
+  (colors, badges, judgement) stays the app's via the day builder.
+
 ## 0.12.0
 
 * journal: the module exists — option B of docs/journal-module-design.md,
