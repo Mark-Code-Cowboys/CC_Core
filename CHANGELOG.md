@@ -1,3 +1,14 @@
+## 0.16.0
+
+* text: `parseLooseDate` — reads a date out of free text (numeric
+  US-first with day-first rescue, ISO, written months), extracted from
+  Course Ledger when Hitch Post's importers became its second consumer.
+* io: `CsvMappingScreen` + `showCsvMappingScreen` + `CsvField` +
+  `guessCsvMapping` — the generic column mapper for spreadsheet-keeper
+  import flows, extracted from Course Ledger when Hitch Post became the
+  second app to need one. Riverpod-free: the app supplies the fields
+  (with guess tiers) and an `onImport` that returns the summary line.
+
 ## 0.15.0
 
 * paywall: `FreeTierCounter` — the counter card with progress bar and

@@ -10,5 +10,6 @@ export 'cloud_backup/icloud_backup_service.dart';
 export 'cloud_backup/in_memory_cloud_backup_service.dart';
 export 'csv_export.dart';
 export 'csv_import.dart';
+export 'csv_mapping_screen.dart';
 export 'legacy_android_prefs.dart';
 export 'share_launcher.dart';
