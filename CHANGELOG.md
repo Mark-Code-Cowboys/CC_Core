@@ -1,3 +1,13 @@
+## 0.11.0
+
+* theme: the module exists — `CcThemeTokens` (seed color, optional
+  hand-tuned scheme per brightness) and `ccLightTheme`/`ccDarkTheme`
+  over the base both apps had hand-copied (surface-colored scaffold and
+  app bar). Type scale and corner radii join when an app varies them.
+* trends: `countHeadline` + `CountedSubject` — the "47 courses ·
+  12 states" home-screen line, extracted from Course Ledger; zero
+  counts drop after the lead subject, irregular plurals supported.
+
 ## 0.10.0
 
 * onboarding: the module exists — `FirstRunFlag` (persisted seen-flag

@@ -6,6 +6,7 @@
 /// heatmap extraction is still to come.
 library;
 
+export 'count_headline.dart';
 export 'region_tile_grid.dart';
 export 'simple_line_chart.dart';
 export 'trend_gate.dart';
