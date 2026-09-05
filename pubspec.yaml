@@ -1,6 +1,6 @@
 name: cc_core
 description: "Shared core library for Code Cowboys apps — privacy-first, local-only journal/log building blocks."
-version: 0.11.0
+version: 0.12.0
 repository: https://github.com/Mark-Code-Cowboys/cc_core
 publish_to: none
 
@@ -13,6 +13,8 @@ environment:
 dependencies:
   # io backup archive (zip build/read), same version Table Encore ships.
   archive: ^4.0.9
+  # journal module: shared Drift table definitions + generic repository.
+  drift: ^2.34.3
   flutter:
     sdk: flutter
   # scan module: on-device capture + OCR, same versions Table Encore
@@ -22,6 +24,8 @@ dependencies:
   google_sign_in: ^7.2.0
   http: ^1.6.0
   icloud_storage: ^2.2.0
+  # journal photo store (capture/pick), same version both apps ship.
+  image_picker: ^1.2.3
   in_app_purchase: ^3.3.0
   # For GooglePlayProductDetails: base-plan selection on multi-plan
   # subscriptions. Pure-Dart wrappers; safe to import on every platform.
@@ -31,7 +35,6 @@ dependencies:
 
 dev_dependencies:
   build_runner: ^2.15.1
-  drift: ^2.34.3
   drift_dev: ^2.34.5
   flutter_lints: ^6.0.0
   flutter_test:

@@ -1,3 +1,24 @@
+## 0.12.0
+
+* journal: the module exists — option B of docs/journal-module-design.md,
+  chosen for the coming fleet. Shared Drift tables apps register in
+  their own database (`JournalEntries` notes/rating, `JournalPhotos`,
+  `JournalTags`, all with `@UseRowClass` so every app maps to the same
+  row types; domain rows point at entries via a nullable
+  journalEntryId — deleting a domain row is the app's cue to call
+  `deleteEntries`). `JournalRepository` is generic over the generated
+  table classes: create/update/delete with photo-file discard, photo
+  and tag management, `watchEntry`, `getEntries` for list joins,
+  `searchEntryIds` (notes + tags), and `collectMedia` for backup
+  archives. Plus the photo seam extracted from Table Encore:
+  `PhotoFileStore`/`PhotoService`/`ImagePickerPhotoService` (file-name
+  prefix injected) and the `PhotoAttachmentStrip` composer widget.
+  drift moves from dev to a real dependency; image_picker added (both
+  apps already ship it). Course Ledger is the proving consumer (schema
+  v2 migration); Table Encore adoption is a separate pass — its
+  dish-level double ratings and single-photo column need their own
+  design read.
+
 ## 0.11.0
 
 * theme: the module exists — `CcThemeTokens` (seed color, optional
