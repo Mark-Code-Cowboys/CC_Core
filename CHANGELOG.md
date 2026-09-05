@@ -1,3 +1,13 @@
+## 0.10.0
+
+* onboarding: the module exists — `FirstRunFlag` (persisted seen-flag
+  over `KeyValueStore`) and `OnboardingScaffold` (hero icon, the app's
+  positioning line front and center, supporting copy, the
+  `kPrivacyBoilerplate` promise, and the app's fork of starting
+  actions). Designed fresh with Course Ledger — Table Encore has no
+  first-run flow to extract — so the API may shift when a second
+  consumer adopts it.
+
 ## 0.9.0
 
 * trends: first real contents, driven by Course Ledger's Phase E —
@@ -37,6 +47,7 @@
   import-mapper flows ("spreadsheet keepers").
 * Table Encore adoption (later, no rush): its `core/ocr/` types and
   ML Kit services are now duplicates of the scan module.
+
 ## 0.7.0
 
 * paywall: `LifetimeTally` — how many of the gated subject were ever
