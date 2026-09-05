@@ -8,6 +8,9 @@
   floors at the live row count for pre-tally installs, `raiseTo` lets
   backup restores carry the figure between phones. Table Encore can
   adopt it by passing its existing `restaurants_created_lifetime` key.
+* paywall: `PaywallSheetScaffold` scrolls when its content is taller
+  than the sheet (small screens, long benefit lists) instead of
+  overflowing; unchanged when everything fits.
 
 ## 0.6.1
 
