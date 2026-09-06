@@ -85,3 +85,17 @@ DateTime? _validDate(int year, int month, int day) {
   // Reject rollovers like Feb 30 -> Mar 2.
   return (d.month == month && d.day == day) ? d : null;
 }
+
+/// The first [max] distinct dates printed across merged OCR [rows], in
+/// print order — a range row yields both of its dates. Extracted with
+/// [parseCostCents]; receipts and notebook pages share this shape.
+List<DateTime> parsePageDates(List<String> rows, {int max = 2}) {
+  final dates = <DateTime>[];
+  for (final row in rows) {
+    for (final date in parseLooseDates(row)) {
+      if (!dates.contains(date)) dates.add(date);
+      if (dates.length == max) return dates;
+    }
+  }
+  return dates;
+}

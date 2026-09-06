@@ -1,3 +1,12 @@
+## 0.19.0
+
+* text: `parseCostCents` (labeled bottom-line total off merged OCR
+  rows) and `parsePageDates` (first N distinct dates, range rows
+  included) — extracted from Hitch Post's receipt parser when Back
+  Forty became the second consumer. The watch-list money-parser
+  question is settled: Table Encore's receipt parser wants line items,
+  not totals, and stays domain.
+
 ## 0.18.0
 
 * notifications: the local-reminder module, proposed from Back Forty's
