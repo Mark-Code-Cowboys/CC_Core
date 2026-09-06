@@ -1,3 +1,14 @@
+## 0.18.0
+
+* notifications: the local-reminder module, proposed from Back Forty's
+  service intervals and approved — `ReminderScheduler` seam
+  (schedule/cancel/cancelAll/requestPermission),
+  `LocalNotificationsScheduler` over flutter_local_notifications
+  (inexact scheduling, one channel per app, timezone handled), and
+  `FakeReminderScheduler` for tests. Local only: a reminder is the
+  device talking to its own future self. New deps:
+  flutter_local_notifications, flutter_timezone, timezone.
+
 ## 0.17.0
 
 Closes the five duplicate-shedding candidates from Hitch Post's 0-G

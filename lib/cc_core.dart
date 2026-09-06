@@ -8,6 +8,7 @@ library;
 export 'src/io/io.dart';
 export 'src/journal/journal.dart';
 export 'src/notebook_import/notebook_import.dart';
+export 'src/notifications/notifications.dart';
 export 'src/onboarding/onboarding.dart';
 export 'src/paywall/paywall.dart';
 export 'src/scan/scan.dart';
