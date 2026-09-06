@@ -1,3 +1,17 @@
+## 0.20.0
+
+Closes the two ripe watch-list items — four identical consumers each
+(Course Ledger, Hitch Post, Fresh Pot, Back Forty):
+
+* io: `shareStampedFile` + `dateStamp` — the export tail every app's
+  ExportService repeated (date-stamped temp file, write, share sheet).
+  The per-app queries stay domain.
+* io: `runRestoreFlow` — the pick/confirm/restore/media/snackbar flow,
+  riverpod-free; the app supplies its own confirm wording and a
+  restore callback (restoreFromExportData + any tally raise). Reads
+  through XFile.readAsBytes (Android content URIs work; tests inject
+  XFile.fromData). New dep: file_selector.
+
 ## 0.19.0
 
 * text: `parseCostCents` (labeled bottom-line total off merged OCR

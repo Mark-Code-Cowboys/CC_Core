@@ -1,6 +1,6 @@
 name: cc_core
 description: "Shared core library for Code Cowboys apps — privacy-first, local-only journal/log building blocks."
-version: 0.19.0
+version: 0.20.0
 repository: https://github.com/Mark-Code-Cowboys/cc_core
 publish_to: none
 
@@ -15,6 +15,8 @@ dependencies:
   archive: ^4.0.9
   # journal module: shared Drift table definitions + generic repository.
   drift: ^2.34.3
+  # Restore-flow backup picking — every app carried the same picker.
+  file_selector: ^1.0.3
   flutter:
     sdk: flutter
   # notifications module: the local-reminder seam's real impl.
