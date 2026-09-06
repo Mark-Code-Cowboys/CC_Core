@@ -1,3 +1,9 @@
+## 0.21.0
+
+* trends: `continentTiles` + `continentNames` — the whole-world
+  coverage strip, donated by Pocket Curio during its adoption pass
+  (the second consumer of region tiles beyond usStateTiles).
+
 ## 0.20.0
 
 Closes the two ripe watch-list items — four identical consumers each

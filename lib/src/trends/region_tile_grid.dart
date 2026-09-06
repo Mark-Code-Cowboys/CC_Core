@@ -142,3 +142,27 @@ const usStateTiles = [
   RegionTile('TX', 3, 7),
   RegionTile('FL', 8, 7),
 ];
+
+/// One row of continents for [RegionTileGrid] — the whole-world
+/// coverage strip. Donated by Pocket Curio (the second consumer of
+/// region tiles beyond [usStateTiles]).
+const continentTiles = [
+  RegionTile('NA', 0, 0),
+  RegionTile('SA', 1, 0),
+  RegionTile('EU', 2, 0),
+  RegionTile('AF', 3, 0),
+  RegionTile('AS', 4, 0),
+  RegionTile('OC', 5, 0),
+  RegionTile('AN', 6, 0),
+];
+
+/// Long labels for the continent strip's codes.
+const continentNames = {
+  'NA': 'North America',
+  'SA': 'South America',
+  'EU': 'Europe',
+  'AF': 'Africa',
+  'AS': 'Asia',
+  'OC': 'Oceania',
+  'AN': 'Antarctica',
+};
