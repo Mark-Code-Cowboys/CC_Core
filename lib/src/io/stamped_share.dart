@@ -31,10 +31,14 @@ Future<File> shareStampedFile({
   final stamp = dateStamp(now ?? DateTime.now());
   final file =
       File('${(await tempDir()).path}/$baseName-$stamp.$extension');
+  // Synchronous IO on purpose: exports are small one-shot files, and
+  // sync writes complete inside flutter_test's fake-async zone where
+  // dart:io futures never resolve — so consumers' share buttons stay
+  // widget-testable. (Insight inherited from Pocket Curio's store.)
   if (text != null) {
-    await file.writeAsString(text);
+    file.writeAsStringSync(text);
   } else {
-    await file.writeAsBytes(bytes!);
+    file.writeAsBytesSync(bytes!);
   }
   await share.shareFile(file.path,
       mimeType: mimeType, text: '$shareText ($stamp)');

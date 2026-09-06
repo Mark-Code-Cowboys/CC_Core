@@ -1,3 +1,11 @@
+## 0.21.2
+
+* io: `shareStampedFile` writes synchronously — exports are small
+  one-shot files, and sync IO completes inside flutter_test's
+  fake-async zone, keeping consumers' share buttons widget-testable
+  (found by Pocket Curio's map-screen test; the insight comes from its
+  photo store's documented design).
+
 ## 0.21.1
 
 * Removes a stray test stub accidentally committed with 0.21.0 (the
