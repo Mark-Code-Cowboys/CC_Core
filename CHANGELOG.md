@@ -1,3 +1,8 @@
+## 0.21.1
+
+* Removes a stray test stub accidentally committed with 0.21.0 (the
+  suite is green again at the tag; no library changes).
+
 ## 0.21.0
 
 * trends: `continentTiles` + `continentNames` — the whole-world
