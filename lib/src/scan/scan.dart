@@ -14,4 +14,6 @@ export 'fake_document_scan_service.dart';
 export 'mlkit_document_scan_service.dart';
 export 'mlkit_text_recognition_service.dart';
 export 'ocr_types.dart';
+export 'platform_document_scan_service.dart';
 export 'text_recognition_service.dart';
+export 'visionkit_document_scan_service.dart';

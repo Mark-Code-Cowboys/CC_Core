@@ -1,6 +1,6 @@
 name: cc_core
 description: "Shared core library for Code Cowboys apps — privacy-first, local-only journal/log building blocks."
-version: 0.21.2
+version: 0.22.0
 repository: https://github.com/Mark-Code-Cowboys/cc_core
 publish_to: none
 
@@ -13,6 +13,8 @@ environment:
 dependencies:
   # io backup archive (zip build/read), same version Table Encore ships.
   archive: ^4.0.9
+  # scan module: VisionKit document camera on iOS (ML Kit is Android-only).
+  cunning_document_scanner: ^3.0.2
   # journal module: shared Drift table definitions + generic repository.
   drift: ^2.34.3
   # Restore-flow backup picking — every app carried the same picker.

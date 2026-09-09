@@ -1,3 +1,25 @@
+## 0.22.0
+
+Receipt-scanner accuracy pass, prompted by a Table Encore TestFlight
+tester's "wonky" results on iPhone:
+
+* scan: `VisionKitDocumentScanService` — Apple's document camera
+  (auto edge detection, perspective correction) via
+  cunning_document_scanner, behind the existing `DocumentScanService`
+  seam. iPhones had only the plain picker, so every receipt photo was
+  a tilted, uncropped snapshot. `platformDocumentScanService()` picks
+  ML Kit on Android, VisionKit on iOS, the stub elsewhere.
+* scan: `OcrLine` gains optional `width` and `angle`; `mergeOcrRows`
+  un-tilts the page by `estimateSkew` (width-weighted median of the
+  lines' baseline angles) before grouping rows, so a price at the far
+  right of a tilted row stays with its name instead of dropping into
+  the next row. `MlKitTextRecognitionService` fills both from the
+  line's corner points (the plugin's own `angle` is null on iOS).
+* text: `titleCaseShouted` keeps acronyms shouted (RV, BBQ, BLT, NY,
+  PB&J, IPA), lowercases everyday abbreviations (St, Dr, Mr), and
+  treats digit-led tokens as units ("16OZ" -> "16oz"). "BIG PINES RV
+  PARK" now reads "Big Pines RV Park".
+
 ## 0.21.2
 
 * io: `shareStampedFile` writes synchronously — exports are small
