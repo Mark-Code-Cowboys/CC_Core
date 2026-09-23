@@ -1,3 +1,23 @@
+## 0.23.0
+
+Fixes every Android document scan since 0.22.0 failing with "Couldn't
+read that image" (Table Encore 1.3.1, reported by Mark and reproduced
+on the Pixel 7 emulator with a real receipt):
+
+* scan: `CunningDocumentScanService` replaces both
+  `VisionKitDocumentScanService` (kept as a deprecated typedef) and
+  `MlKitDocumentScanService` (removed, with the
+  google_mlkit_document_scanner dependency). cunning_document_scanner
+  already wraps ML Kit on Android, and the two plugins cannot share an
+  app: both listen for Android activity results on request code
+  0x362738, Flutter delivers each result to every listener, so the
+  cunning plugin moved the Google plugin's page image into its own
+  storage and the path handed to Dart was gone before OCR opened it.
+  `platformDocumentScanService()` now returns the cunning service on
+  Android and iOS. Consumers drop google_mlkit_document_scanner from
+  their pubspec; the ML Kit ProGuard keeps stay (text recognition and
+  the scanner share the `com.google.mlkit` prefix).
+
 ## 0.22.0
 
 Receipt-scanner accuracy pass, prompted by a Table Encore TestFlight
