@@ -36,6 +36,7 @@ own barrel file, re-exported by `lib/cc_core.dart`.
 | `theme/` | Base theme consuming a per-app token class (colors, type scale, corner radii) |
 | `scan/` | AI photo-extraction client (menu/receipt/notebook-page → structured fields → user-confirm screen). Per-app extraction schema injected; core owns the pipeline, camera/crop UX, and confirm-before-save screen |
 | `notebook_import/` | Batch flavor of `scan/`: multi-page capture → queued extraction → review list → bulk insert |
+| `geo/` | Pin-based place matching: haversine distance, candidates within a radius, pin refinement rules, `LocationSource` seam + fake. Pure Dart, no policy defaults |
 
 ## Module guides
 
@@ -83,6 +84,39 @@ freeLimit.guard(used: await repo.count(), entitled: await service.isUnlimited())
 
 Bootstrap only — module folders and barrel files are in place; extraction
 from Table Encore and Trace Elements happens phase by phase.
+
+### geo
+
+Pin-based "back here again?" matching, extracted from Table Encore's
+entry flow. Pure Dart, plugin-free; the app wraps its own location
+plugin behind `LocationSource` and passes every policy number.
+
+- `GeoFix` — a device reading: lat, lng, accuracy (m), timestamp.
+- `GeoPin` — a stored location; accuracy/capture time optional for
+  pins recorded before they were tracked. `GeoPin.tryFrom(lat:, lng:)`
+  turns nullable columns into a pin or null.
+- `distanceMeters(a, b)` — haversine between any two `GeoPoint`s.
+- `findCandidates<T>(fix:, items:, pinOf:, radiusM:)` — pinned items
+  within the (inclusive) radius, nearest first, with distances.
+- `shouldRefinePin(stored:, fix:, maxAccuracyM:)` — whether a
+  confirmed on-site fix should replace the stored pin.
+- `LocationSource.currentFix({maxAge})` → `LocationResult` (a fix, or
+  permission denied / timeout / unavailable). `FakeLocationSource`
+  scripts results for tests and demo builds.
+
+```dart
+final result = await locationSource.currentFix(maxAge: const Duration(minutes: 2));
+if (result case LocationFixResult(:final fix)) {
+  final nearby = findCandidates<Restaurant>(
+    fix: fix,
+    items: restaurants,
+    pinOf: (r) => GeoPin.tryFrom(lat: r.lat, lng: r.lng,
+        accuracyM: r.pinAccuracyM, capturedAt: r.pinCapturedAt),
+    radiusM: 75,
+  );
+  // 0 → new place, 1 → "Back at ${nearby.single.item.name}?", 2+ → pick list
+}
+```
 
 ### io — cloud backup
 

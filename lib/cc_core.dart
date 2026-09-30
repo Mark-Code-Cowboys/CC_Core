@@ -5,6 +5,7 @@
 /// photo-extraction pipelines. See README.md for the full module map.
 library;
 
+export 'src/geo/geo.dart';
 export 'src/io/io.dart';
 export 'src/journal/journal.dart';
 export 'src/notebook_import/notebook_import.dart';

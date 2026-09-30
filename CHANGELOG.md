@@ -1,3 +1,31 @@
+## 0.24.0
+
+New `geo/` module for pin-based place matching, driven by Table
+Encore's "back at {name}?" entry flow and built for Hitch Post and
+Course Ledger to reuse. Additive only; no existing API changes.
+
+* geo: `GeoPoint` (anything with lat/lng), `GeoFix` (a device reading
+  with accuracy and timestamp, `isStale`), `GeoPin` (a stored location
+  whose accuracy and capture time are optional so pins recorded before
+  accuracy was tracked still fit; `tryFrom` nullable columns,
+  `fromFix`).
+* geo: `distanceMeters(a, b)` — haversine, moved up from Table Encore.
+* geo: `findCandidates<T>(fix:, items:, pinOf:, radiusM:)` — every
+  pinned item within an inclusive radius, nearest first, as
+  `GeoCandidate<T>` with its distance. Generic over the app's model;
+  pinless items are never candidates.
+* geo: `shouldRefinePin(stored:, fix:, maxAccuracyM:)` — backfill a
+  missing pin, refine an unknown-accuracy pin by any fix within the
+  threshold, otherwise only by a strictly better fix within it.
+* geo: `LocationResult` (sealed: `LocationFixResult`,
+  `LocationPermissionDenied`, `LocationTimeout`, `LocationUnavailable`)
+  and the `LocationSource` seam (`currentFix({maxAge})`). Core ships
+  no platform implementation; `FakeLocationSource` (scripted, records
+  every call) is exported from the main barrel like the other fakes.
+* Core owns no policy: radius, refinement threshold and maximum fix
+  age are caller-supplied with no defaults. Pure Dart; no new
+  dependencies.
+
 ## 0.23.0
 
 Fixes every Android document scan since 0.22.0 failing with "Couldn't
