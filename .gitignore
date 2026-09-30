@@ -32,3 +32,6 @@ migrate_working_dir/
 
 # Local path overrides used during extraction — never commit
 pubspec_overrides.yaml
+
+# Dart DevTools drops this when it runs; no settings live in it.
+devtools_options.yaml
