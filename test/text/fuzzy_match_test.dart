@@ -7,23 +7,28 @@ void main() {
   group('suggest', () {
     test('degenerate queries return empty', () {
       expect(FuzzyMatch.suggest('', ['apple', 'banana']), isEmpty);
-      expect(FuzzyMatch.suggest('a', ['apple', 'banana']), isEmpty,
-          reason: 'single chars are too noisy to be useful suggestions');
+      expect(
+        FuzzyMatch.suggest('a', ['apple', 'banana']),
+        isEmpty,
+        reason: 'single chars are too noisy to be useful suggestions',
+      );
       expect(FuzzyMatch.suggest('   ', ['apple']), isEmpty);
       expect(FuzzyMatch.suggest('apple', const <String>[]), isEmpty);
     });
 
     test('substring match surfaces, case-insensitively', () {
-      expect(
-          FuzzyMatch.suggest('apple', ['apple, raw', 'carrot']), ['apple, raw']);
+      expect(FuzzyMatch.suggest('apple', ['apple, raw', 'carrot']), [
+        'apple, raw',
+      ]);
       expect(FuzzyMatch.suggest('APPLE', ['Apple, Raw']), ['Apple, Raw']);
     });
 
     test('exact (case-insensitive) matches are excluded', () {
       // Exact hits are already resolved by direct lookup; suggest only
       // surfaces near-misses.
-      expect(FuzzyMatch.suggest('apple', ['Apple', 'apple, raw']),
-          ['apple, raw']);
+      expect(FuzzyMatch.suggest('apple', ['Apple', 'apple, raw']), [
+        'apple, raw',
+      ]);
     });
 
     test('typos tolerated via Levenshtein', () {
@@ -31,17 +36,23 @@ void main() {
     });
 
     test('token reordering matches', () {
-      expect(FuzzyMatch.suggest('raw apple', ['Apples, raw', 'Bread, rye']),
-          ['Apples, raw']);
+      expect(FuzzyMatch.suggest('raw apple', ['Apples, raw', 'Bread, rye']), [
+        'Apples, raw',
+      ]);
     });
 
     test('shorter candidate outranks longer for a substring query', () {
       expect(
-          FuzzyMatch.suggest(
-              'apple', ['apples, raw, with skin', 'apple, raw']).first,
-          'apple, raw');
-      expect(FuzzyMatch.suggest('apple', ['apple, gala', 'apple, raw']),
-          ['apple, raw', 'apple, gala']);
+        FuzzyMatch.suggest('apple', [
+          'apples, raw, with skin',
+          'apple, raw',
+        ]).first,
+        'apple, raw',
+      );
+      expect(FuzzyMatch.suggest('apple', ['apple, gala', 'apple, raw']), [
+        'apple, raw',
+        'apple, gala',
+      ]);
     });
 
     test('max limit respected', () {
@@ -50,26 +61,30 @@ void main() {
         'apples, gala',
         'apples, fuji',
         'applesauce',
-        'apple juice'
+        'apple juice',
       ];
       expect(FuzzyMatch.suggest('apple', candidates, max: 2), hasLength(2));
     });
 
     test('unrelated candidates filtered out', () {
-      expect(FuzzyMatch.suggest('apple', ['zucchini', 'tofu', 'haggis']),
-          isEmpty);
-      expect(FuzzyMatch.suggest('xy', ['antidisestablishmentarianism']),
-          isEmpty);
+      expect(
+        FuzzyMatch.suggest('apple', ['zucchini', 'tofu', 'haggis']),
+        isEmpty,
+      );
+      expect(
+        FuzzyMatch.suggest('xy', ['antidisestablishmentarianism']),
+        isEmpty,
+      );
     });
 
     test('punctuation in candidate does not block token match', () {
       expect(
-          FuzzyMatch.suggest('granny apple', ['Apples (Granny Smith)', 'Pears']),
-          contains('Apples (Granny Smith)'));
+        FuzzyMatch.suggest('granny apple', ['Apples (Granny Smith)', 'Pears']),
+        contains('Apples (Granny Smith)'),
+      );
     });
 
-    test('a short candidate token is not a prefix match for a long query',
-        () {
+    test('a short candidate token is not a prefix match for a long query', () {
       // Trace Elements bug: a menu description's "strips" / "style"
       // resolved to "St. john's wort, dry" because its token "st" was
       // credited as a prefix of the query word.
@@ -77,21 +92,22 @@ void main() {
       for (final word in ['strips', 'style', 'stone', 'steak']) {
         expect(FuzzyMatch.suggest(word, [herb]), isEmpty, reason: word);
       }
-      expect(FuzzyMatch.suggest('wort', [herb]), [herb],
-          reason: 'a whole token of the candidate still matches');
+      expect(FuzzyMatch.suggest('wort', [herb]), [
+        herb,
+      ], reason: 'a whole token of the candidate still matches');
     });
 
     test('typing the start of a word still suggests it', () {
-      expect(FuzzyMatch.suggest('st', ['strawberries', 'tofu']),
-          ['strawberries']);
-      expect(FuzzyMatch.suggest('straw', ['strawberries, raw']),
-          ['strawberries, raw']);
+      expect(FuzzyMatch.suggest('st', ['strawberries', 'tofu']), [
+        'strawberries',
+      ]);
+      expect(FuzzyMatch.suggest('straw', ['strawberries, raw']), [
+        'strawberries, raw',
+      ]);
     });
 
-    test('a candidate token covering most of the query still matches',
-        () {
-      expect(FuzzyMatch.suggest('tomatoes', ['tomato, raw']),
-          ['tomato, raw']);
+    test('a candidate token covering most of the query still matches', () {
+      expect(FuzzyMatch.suggest('tomatoes', ['tomato, raw']), ['tomato, raw']);
       expect(FuzzyMatch.suggest('apples', ['apple, raw']), ['apple, raw']);
     });
 
@@ -102,7 +118,7 @@ void main() {
         'apricot, raw',
         'asparagus, cooked',
         'almonds, raw',
-        'avocado, raw'
+        'avocado, raw',
       ];
       final result = FuzzyMatch.suggest('apple', db, max: 3);
       expect(result.any((r) => r.startsWith('apple')), isTrue);
@@ -112,12 +128,18 @@ void main() {
 
   group('matchesQuery', () {
     test('is word-order independent', () {
-      expect(FuzzyMatch.matchesQuery('scrambled eggs', 'eggs scrambled'),
-          isTrue);
-      expect(FuzzyMatch.matchesQuery('eggs scrambled', 'scrambled eggs'),
-          isTrue);
-      expect(FuzzyMatch.matchesQuery('scrambled eggs', 'eggs, scrambled'),
-          isTrue);
+      expect(
+        FuzzyMatch.matchesQuery('scrambled eggs', 'eggs scrambled'),
+        isTrue,
+      );
+      expect(
+        FuzzyMatch.matchesQuery('eggs scrambled', 'scrambled eggs'),
+        isTrue,
+      );
+      expect(
+        FuzzyMatch.matchesQuery('scrambled eggs', 'eggs, scrambled'),
+        isTrue,
+      );
     });
 
     test('still honors contiguous substrings', () {
@@ -126,8 +148,10 @@ void main() {
     });
 
     test('rejects a missing token', () {
-      expect(FuzzyMatch.matchesQuery('eggs benedict', 'eggs, scrambled'),
-          isFalse);
+      expect(
+        FuzzyMatch.matchesQuery('eggs benedict', 'eggs, scrambled'),
+        isFalse,
+      );
     });
 
     test('blank matches nothing', () {
@@ -138,8 +162,10 @@ void main() {
 
   group('wordOrderVariants', () {
     test('reverses a two-word query', () {
-      expect(FuzzyMatch.wordOrderVariants('scrambled eggs'),
-          ['scrambled eggs', 'eggs scrambled']);
+      expect(FuzzyMatch.wordOrderVariants('scrambled eggs'), [
+        'scrambled eggs',
+        'eggs scrambled',
+      ]);
     });
 
     test('single word is itself', () {
@@ -147,16 +173,20 @@ void main() {
     });
 
     test('always starts with the original and respects the cap', () {
-      final variants =
-          FuzzyMatch.wordOrderVariants('cream of mushroom soup', max: 3);
+      final variants = FuzzyMatch.wordOrderVariants(
+        'cream of mushroom soup',
+        max: 3,
+      );
       expect(variants.first, 'cream of mushroom soup');
       expect(variants.length, lessThanOrEqualTo(3));
       expect(variants.toSet().length, variants.length);
     });
 
     test('normalizes whitespace', () {
-      expect(FuzzyMatch.wordOrderVariants('  scrambled   eggs  '),
-          ['scrambled eggs', 'eggs scrambled']);
+      expect(FuzzyMatch.wordOrderVariants('  scrambled   eggs  '), [
+        'scrambled eggs',
+        'eggs scrambled',
+      ]);
     });
   });
 }

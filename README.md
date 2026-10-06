@@ -29,13 +29,15 @@ own barrel file, re-exported by `lib/cc_core.dart`.
 | Module | Purpose |
 | --- | --- |
 | `paywall/` | Billing wrapper, entitlement cache, `FreeLimit` quota helper, `EntitlementGate` widget, paywall sheet scaffold |
-| `io/` | Export (CSV/JSON), backup/restore (single-file archive), cloud backup slot (Google Drive app-data / iCloud container), PDF export |
+| `io/` | Export (CSV/JSON), backup/restore (single-file archive), cloud backup slot (Google Drive app-data / iCloud container), share-sheet seam, safe readers for documents from another phone |
 | `journal/` | Entry/tag/rating/photo-attachment models, Drift repository, search |
 | `trends/` | Calendar heatmap, time-window queries, basic chart widgets |
 | `onboarding/` | First-run flow, consent/privacy screen, "your data never leaves your phone" boilerplate |
 | `theme/` | Base theme consuming a per-app token class (colors, type scale, corner radii) |
-| `scan/` | AI photo-extraction client (menu/receipt/notebook-page → structured fields → user-confirm screen). Per-app extraction schema injected; core owns the pipeline, camera/crop UX, and confirm-before-save screen |
-| `notebook_import/` | Batch flavor of `scan/`: multi-page capture → queued extraction → review list → bulk insert |
+| `scan/` | On-device transcription: document camera (edge detection, multi-page, gallery), ML Kit OCR, row merging, OCR digit repair. Per-app parsers turn lines into fields; the user confirms everything |
+| `notebook_import/` | Batch flavor of `scan/`: multi-page capture → per-page parse → review list → bulk insert |
+| `web/` | One user-initiated page fetch (timeout, byte cap, typed failures) and schema.org JSON-LD extraction |
+| `on_device_ai/` | The phone's own language model behind one seam (Gemini Nano / Apple Foundation Models), plus the line-labeling pattern for sorting OCR text without inventing any |
 | `geo/` | Pin-based place matching: haversine distance, candidates within a radius, pin refinement rules, `LocationSource` seam + fake. Pure Dart, no policy defaults |
 
 ## Module guides

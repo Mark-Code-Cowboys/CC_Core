@@ -12,8 +12,9 @@ class MlKitTextRecognitionService implements TextRecognitionService {
 
   @override
   Future<List<OcrLine>> recognize(String imagePath) async {
-    final result =
-        await _recognizer.processImage(InputImage.fromFilePath(imagePath));
+    final result = await _recognizer.processImage(
+      InputImage.fromFilePath(imagePath),
+    );
     return [
       for (final block in result.blocks)
         for (final line in block.lines)

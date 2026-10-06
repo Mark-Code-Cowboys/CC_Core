@@ -52,8 +52,7 @@ void main() {
       // a line height — split into separate rows before tilt handling.
       final skew = 3 * math.pi / 180;
       final lines = [
-        _tilted('BRISKET PLATE',
-            left: 10, width: 220, top: 100, skew: skew),
+        _tilted('BRISKET PLATE', left: 10, width: 220, top: 100, skew: skew),
         _tilted('18.50', left: 600, width: 60, top: 100, skew: skew),
         _tilted('QUESO', left: 10, width: 90, top: 140, skew: skew),
         _tilted('9.00', left: 600, width: 50, top: 140, skew: skew),
@@ -61,8 +60,11 @@ void main() {
         _tilted('27.50', left: 600, width: 60, top: 180, skew: skew),
       ];
 
-      expect(mergeOcrRows(lines),
-          ['BRISKET PLATE 18.50', 'QUESO 9.00', 'TOTAL 27.50']);
+      expect(mergeOcrRows(lines), [
+        'BRISKET PLATE 18.50',
+        'QUESO 9.00',
+        'TOTAL 27.50',
+      ]);
     });
 
     test('a tilt the other way works too', () {
@@ -80,8 +82,7 @@ void main() {
 
   group('estimateSkew', () {
     test('is zero without angles', () {
-      expect(estimateSkew(const [OcrLine('a', left: 0, top: 0, height: 1)]),
-          0);
+      expect(estimateSkew(const [OcrLine('a', left: 0, top: 0, height: 1)]), 0);
     });
 
     test('is the width-weighted median, so short noisy lines lose', () {

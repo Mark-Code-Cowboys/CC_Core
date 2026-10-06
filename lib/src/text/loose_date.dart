@@ -1,14 +1,25 @@
 const _months = [
-  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
 ];
 
 final _numericDate = RegExp(r'\b(\d{1,2})[/\-.](\d{1,2})[/\-.](\d{2,4})\b');
 final _isoDate = RegExp(r'\b(\d{4})-(\d{1,2})-(\d{1,2})\b');
 final _writtenDate = RegExp(
-    r'\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+'
-    r'(\d{1,2})(?:st|nd|rd|th)?,?\s+(\d{4})\b',
-    caseSensitive: false);
+  r'\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+'
+  r'(\d{1,2})(?:st|nd|rd|th)?,?\s+(\d{4})\b',
+  caseSensitive: false,
+);
 
 /// Reads a date out of free text — receipts, scorecards, notebook
 /// pages, spreadsheet cells: "6/15/2026", "6-15-26", "2026-06-15",
@@ -19,16 +30,24 @@ final _writtenDate = RegExp(
 DateTime? parseLooseDate(String text) {
   final iso = _isoDate.firstMatch(text);
   if (iso != null) {
-    return _validDate(int.parse(iso.group(1)!), int.parse(iso.group(2)!),
-        int.parse(iso.group(3)!));
+    return _validDate(
+      int.parse(iso.group(1)!),
+      int.parse(iso.group(2)!),
+      int.parse(iso.group(3)!),
+    );
   }
   final written = _writtenDate.firstMatch(text);
   if (written != null) {
-    final month = _months.indexWhere((m) =>
-            m.toLowerCase() == written.group(1)!.toLowerCase()) +
+    final month =
+        _months.indexWhere(
+          (m) => m.toLowerCase() == written.group(1)!.toLowerCase(),
+        ) +
         1;
     return _validDate(
-        int.parse(written.group(3)!), month, int.parse(written.group(2)!));
+      int.parse(written.group(3)!),
+      month,
+      int.parse(written.group(2)!),
+    );
   }
   final numeric = _numericDate.firstMatch(text);
   if (numeric != null) {
@@ -48,8 +67,10 @@ DateTime? parseLooseDate(String text) {
 /// same never-invent rule; unparseable candidates are skipped.
 List<DateTime> parseLooseDates(String text) {
   final found = <(int, DateTime)>[];
-  void collect(Iterable<RegExpMatch> matches,
-      DateTime? Function(RegExpMatch) read) {
+  void collect(
+    Iterable<RegExpMatch> matches,
+    DateTime? Function(RegExpMatch) read,
+  ) {
     for (final m in matches) {
       final date = read(m);
       if (date != null) found.add((m.start, date));
@@ -57,12 +78,18 @@ List<DateTime> parseLooseDates(String text) {
   }
 
   collect(
-      _isoDate.allMatches(text),
-      (m) => _validDate(int.parse(m.group(1)!), int.parse(m.group(2)!),
-          int.parse(m.group(3)!)));
+    _isoDate.allMatches(text),
+    (m) => _validDate(
+      int.parse(m.group(1)!),
+      int.parse(m.group(2)!),
+      int.parse(m.group(3)!),
+    ),
+  );
   collect(_writtenDate.allMatches(text), (m) {
-    final month = _months.indexWhere(
-            (mo) => mo.toLowerCase() == m.group(1)!.toLowerCase()) +
+    final month =
+        _months.indexWhere(
+          (mo) => mo.toLowerCase() == m.group(1)!.toLowerCase(),
+        ) +
         1;
     return _validDate(int.parse(m.group(3)!), month, int.parse(m.group(2)!));
   });

@@ -17,13 +17,40 @@ String titleCaseShouted(String s) {
 // Acronyms with a vowel (Y counts, so DRY and GYM stay words) that
 // would otherwise be title-cased.
 const _acronyms = {
-  'IPA', 'IPAS', 'USA', 'UK', 'NY', 'NYC', 'BYOB', 'DIY', 'PBR',
+  'IPA',
+  'IPAS',
+  'USA',
+  'UK',
+  'NY',
+  'NYC',
+  'BYOB',
+  'DIY',
+  'PBR',
 };
 
 // Vowel-less tokens that are abbreviations of ordinary words.
 const _abbreviations = {
-  'ST', 'DR', 'MR', 'MRS', 'MS', 'JR', 'SR', 'RD', 'LN', 'CT', 'PL', 'FT',
-  'MT', 'SQ', 'LB', 'LBS', 'PC', 'PCS', 'HWY', 'PKWY', 'BLVD',
+  'ST',
+  'DR',
+  'MR',
+  'MRS',
+  'MS',
+  'JR',
+  'SR',
+  'RD',
+  'LN',
+  'CT',
+  'PL',
+  'FT',
+  'MT',
+  'SQ',
+  'LB',
+  'LBS',
+  'PC',
+  'PCS',
+  'HWY',
+  'PKWY',
+  'BLVD',
 };
 
 final _letters = RegExp(r'[A-Z&]+');
@@ -34,7 +61,8 @@ String _caseWord(String w) {
   final lower = w.toLowerCase();
   if (RegExp(r'^\d').hasMatch(w)) return lower;
   final core = _letters.firstMatch(w)?.group(0) ?? '';
-  final keepUpper = _acronyms.contains(core) ||
+  final keepUpper =
+      _acronyms.contains(core) ||
       (core.length > 1 &&
           core.length <= 4 &&
           !_vowel.hasMatch(core) &&

@@ -12,8 +12,10 @@ void main() {
   });
 
   test('parseLooseDates reads a whole range row in print order', () {
-    expect(parseLooseDates('6/12/2026 - 6/15/2026'),
-        [DateTime(2026, 6, 12), DateTime(2026, 6, 15)]);
+    expect(parseLooseDates('6/12/2026 - 6/15/2026'), [
+      DateTime(2026, 6, 12),
+      DateTime(2026, 6, 15),
+    ]);
     expect(parseLooseDates('no dates'), isEmpty);
   });
 

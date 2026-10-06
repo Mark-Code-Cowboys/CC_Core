@@ -97,6 +97,70 @@ class ImagePickerPhotoService implements PhotoService {
   }
 }
 
+/// Taking files the picker did NOT produce into permanent storage:
+/// document-scanner pages, images carried inside a shared file.
+/// Extension (not interface members) so existing app fakes keep
+/// compiling. Names follow the service's `<prefix>_<millis><ext>`
+/// convention via [newPhotoPath]; a counter keeps same-millisecond
+/// batches distinct.
+extension PhotoAdoption on PhotoService {
+  /// A fresh stored-file name with [extension] (".jpg" by default).
+  String newPhotoPath({String prefix = 'photo', String extension = '.jpg'}) {
+    final ext = extension.startsWith('.') ? extension : '.$extension';
+    final stamp = DateTime.now().millisecondsSinceEpoch;
+    _adoptCounter = (_adoptCounter + 1) % 1000;
+    return '${prefix}_${stamp}_${_adoptCounter.toString().padLeft(3, '0')}$ext';
+  }
+
+  /// Copies the file at [sourcePath] into the store and returns its
+  /// photoPath. The source is deleted afterwards unless
+  /// [deleteSource] is false.
+  Future<String> adopt(
+    String sourcePath, {
+    String prefix = 'photo',
+    bool deleteSource = true,
+  }) async {
+    final source = File(sourcePath);
+    final dot = sourcePath.lastIndexOf('.');
+    final ext = dot == -1 || dot < sourcePath.lastIndexOf('/')
+        ? '.jpg'
+        : sourcePath.substring(dot).toLowerCase();
+    final name = newPhotoPath(prefix: prefix, extension: ext);
+    await importBytes(name, await source.readAsBytes());
+    if (deleteSource) {
+      try {
+        await source.delete();
+      } catch (_) {}
+    }
+    return name;
+  }
+
+  /// Stores [bytes] under a fresh name and returns its photoPath.
+  Future<String> adoptBytes(
+    List<int> bytes, {
+    String prefix = 'photo',
+    String extension = '.jpg',
+  }) async {
+    final name = newPhotoPath(prefix: prefix, extension: extension);
+    await importBytes(name, bytes);
+    return name;
+  }
+
+  /// Files for several stored photoPaths.
+  List<File> filesFor(Iterable<String> photoPaths) => [
+    for (final p in photoPaths) fileFor(p),
+  ];
+
+  /// Discards several stored photoPaths; missing files are fine.
+  Future<void> discardAll(Iterable<String> photoPaths) async {
+    for (final p in photoPaths) {
+      await discard(p);
+    }
+  }
+}
+
+int _adoptCounter = 0;
+
 /// Test fake: records discards, stores bytes in memory, serves files
 /// from a temp mapping.
 class FakePhotoFileStore implements PhotoFileStore {

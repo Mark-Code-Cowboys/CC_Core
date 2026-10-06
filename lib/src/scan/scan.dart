@@ -5,7 +5,8 @@
 /// Parsers turn recognized text into an app's fields and the user
 /// confirms every value before anything is saved; nothing here (or in
 /// any confirm/review UI built on it) may suggest, correct, or flag
-/// values the camera didn't see.
+/// values the camera didn't see. ([repairOcrDigits] repairs how a
+/// line is read; callers keep the original text alongside.)
 library;
 
 export 'capture_pages.dart';
@@ -13,6 +14,7 @@ export 'cunning_document_scan_service.dart';
 export 'document_scan_service.dart';
 export 'fake_document_scan_service.dart';
 export 'mlkit_text_recognition_service.dart';
+export 'ocr_repair.dart';
 export 'ocr_types.dart';
 export 'platform_document_scan_service.dart';
 export 'text_recognition_service.dart';

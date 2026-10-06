@@ -1,3 +1,47 @@
+## 0.25.0
+
+Pieces lifted up from Trace Elements' recipe import, sharing and
+grocery work, each with a second consumer in sight. One behaviour
+change in `scan/` (marked).
+
+* scan: `repairOcrDigits(line)` — fixes the l/I/|→1, O→0, Z→2 and
+  split-fraction misreads OCR makes in a quantity position, leaving
+  words alone. Receipts, scorecards, nameplates and labels read the
+  same way.
+* scan: **`captureDocumentPages` now throws `DocumentCaptureException`**
+  when the scanner itself fails (denied permission, no Play services)
+  instead of returning an empty list, which every consumer had been
+  treating as "the user cancelled". Backing out is still empty. Catch
+  it to show a recovery hint ("allow camera access… or pick a photo").
+* text: `unescapeHtml`, `stripHtml`, `stripHtmlInline` — entity decode
+  and tag strip for strings that arrive with markup (JSON-LD fields,
+  API attribution strings).
+* text: `parseLooseNumber` ("1 1/2", "1½", "¾", ".5"),
+  `firstLooseNumberIn`, `looseNumberPattern`, `unicodeFractions`, and
+  `formatQuantity` (fractions back to glyphs).
+* io: `safe_json.dart` — `readSafeText` / `readSafeNumber` /
+  `readSafeHttpUrl` / `safeFileName` with `SafeJsonException`: length
+  caps, finite ranges, http(s)-only, markup stripped, script-like
+  content refused. For any document that came from another phone.
+* journal: `PhotoAdoption` extension on `PhotoService` — `adopt(path)`,
+  `adoptBytes(bytes)`, `newPhotoPath()`, `filesFor`, `discardAll` — so
+  scanner pages and images inside a shared file go into the same
+  permanent store as picked photos. An extension, so app fakes that
+  `implements PhotoService` are untouched.
+* NEW web/: `HtmlPageFetcher` (one user-initiated fetch, timeout, byte
+  cap, typed `PageFetchOutcome`), `normalizeHttpUrl`, `firstUrlIn`;
+  `extractJsonLdBlocks`, `decodeJsonLdBlock`, `findJsonLdObjects(json,
+  type)`, `firstJsonLdObject(html, type)`, `parseIsoDuration`. The
+  schema.org → app-model mapping stays app-side.
+* NEW on_device_ai/: `OnDeviceTextModel` seam (`MethodChannelTextModel`
+  over an app-named channel answering `isAvailable` / `generate`,
+  `FakeOnDeviceTextModel`), and `LineLabeler` — the sort-OCR-lines-
+  by-label pattern (app-defined label alphabet, optional readings,
+  usability check) that keeps the scan guardrail: the model
+  reorganises original lines and never invents text. Native reference
+  code for Gemini Nano / Apple Foundation Models in
+  `doc/on_device_ai.md`.
+
 ## 0.24.0
 
 New `geo/` module for pin-based place matching, driven by Table

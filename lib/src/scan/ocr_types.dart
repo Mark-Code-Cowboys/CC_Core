@@ -48,7 +48,7 @@ class OcrLine {
 double estimateSkew(List<OcrLine> lines) {
   final known = [
     for (final l in lines)
-      if (l.angle != null && l.width > 0 && l.angle!.abs() < math.pi / 4) l
+      if (l.angle != null && l.width > 0 && l.angle!.abs() < math.pi / 4) l,
   ]..sort((a, b) => a.angle!.compareTo(b.angle!));
   if (known.isEmpty) return 0;
   final total = known.fold(0.0, (sum, l) => sum + l.width);
