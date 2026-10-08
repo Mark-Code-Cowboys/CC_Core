@@ -1,12 +1,45 @@
 import 'dart:math' as math;
 
+/// One recognized word with its box, for callers that need to split a
+/// line the recognizer glued across a column gap ([splitOcrLinesAtGaps]).
+class OcrWord {
+  /// Creates a word box.
+  const OcrWord(
+    this.text, {
+    required this.left,
+    required this.top,
+    required this.width,
+    required this.height,
+  });
+
+  /// The recognized word.
+  final String text;
+
+  /// Left edge, in image pixels.
+  final double left;
+
+  /// Top edge, in image pixels.
+  final double top;
+
+  /// Width, in image pixels.
+  final double width;
+
+  /// Height, in image pixels.
+  final double height;
+
+  /// Right edge, in image pixels.
+  double get right => left + width;
+}
+
 /// One recognized text line with enough geometry to re-assemble rows.
 /// Plugin-free so parsers and everything above stay widget-testable.
 class OcrLine {
   /// Creates a line at ([left], [top]) with the given [height]. [width]
   /// and [angle] are optional: without them the line is treated as a
   /// point at its left edge on a level page, which is all the merge
-  /// needed before tilt handling.
+  /// needed before tilt handling. [words] (the recognizer's elements,
+  /// in reading order) let [layoutOcrLines] split a line that spans a
+  /// column gap; null when the recognizer gave none.
   const OcrLine(
     this.text, {
     required this.left,
@@ -14,6 +47,7 @@ class OcrLine {
     required this.height,
     this.width = 0,
     this.angle,
+    this.words,
   });
 
   /// The recognized text.
@@ -35,6 +69,13 @@ class OcrLine {
   /// sits lower on the image than the left (image y grows downward).
   /// Null when the recognizer gave no corner geometry.
   final double? angle;
+
+  /// The line's words with their own boxes, when the recognizer
+  /// supplied them.
+  final List<OcrWord>? words;
+
+  /// Right edge of the bounding box, in image pixels.
+  double get right => left + width;
 
   /// Center of the bounding box.
   math.Point<double> get center =>

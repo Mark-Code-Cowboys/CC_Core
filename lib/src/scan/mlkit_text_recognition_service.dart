@@ -25,6 +25,16 @@ class MlKitTextRecognitionService implements TextRecognitionService {
             height: line.boundingBox.height,
             width: line.boundingBox.width,
             angle: _baselineAngle(line.cornerPoints),
+            words: [
+              for (final e in line.elements)
+                OcrWord(
+                  e.text,
+                  left: e.boundingBox.left,
+                  top: e.boundingBox.top,
+                  width: e.boundingBox.width,
+                  height: e.boundingBox.height,
+                ),
+            ],
           ),
     ];
   }

@@ -1,3 +1,25 @@
+## 0.26.0
+
+Reading order for OCR'd pages that are not a single column, lifted
+from Trace Elements' cookbook-page scan (a Pixel 9 Pro XL reading a
+two-column spread row by row glued every ingredient to the instruction
+beside it).
+
+* scan: `OcrWord` and `OcrLine.words` — the recognizer's word boxes on
+  each line. `MlKitTextRecognitionService` fills them from ML Kit's
+  elements on both platforms.
+* scan: `splitOcrLinesAtGaps(lines)` — splits a line at word gaps
+  wider than twice the page's median line height, so a line the
+  recognizer glued across a column gutter becomes one line per column.
+* scan: `layoutOcrLines(lines)` — a page in reading order: rows become
+  blocks of horizontal bands; a full-width line under two columns ends
+  a block; a block of short label/value rows (receipt, "Flour ….. 2
+  cups") reads row by row and any other multi-band block reads column
+  by column; an indented line directly under its neighbour that
+  doesn't start a sentence is a wrapped continuation and is joined; an
+  empty string separates columns, blocks and clear paragraph gaps.
+  `mergeOcrRows` is unchanged for receipts and menus.
+
 ## 0.25.0
 
 Pieces lifted up from Trace Elements' recipe import, sharing and
