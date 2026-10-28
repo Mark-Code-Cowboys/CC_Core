@@ -14,6 +14,12 @@ void main() {
     expect(repairOcrDigits('1 /2 cup'), '1/2 cup');
     expect(repairOcrDigits('1/ 2 cup'), '1/2 cup');
     expect(
+      repairOcrDigits('Va teaspoon baking soda'),
+      '¼ teaspoon baking soda',
+    );
+    expect(repairOcrDigits('V4 cup sugar'), '¼ cup sugar');
+    expect(repairOcrDigits('Vz cup butter'), '½ cup butter');
+    expect(
       repairOcrDigits('Par 4  l2'),
       'Par 4  l2',
     ); // not a quantity position
@@ -25,6 +31,8 @@ void main() {
       'Oil for frying',
       '1 lb. lamb',
       'Oats',
+      'Va cooking spray',
+      'Vanilla cup custard',
     ]) {
       expect(repairOcrDigits(w), w);
     }

@@ -1,3 +1,20 @@
+## 0.26.1
+
+Fixes from Trace Elements scanning a curved cookbook page (ingredient
+column beside the instructions, the page bowing toward the spine).
+
+* scan: `textHeight(line)` — a line's lettering height (its words'
+  median), used by `splitOcrLinesAtGaps` and `layoutOcrLines` in place
+  of the upright box, which on a tilted page is two or three times the
+  text and hid a narrow column gutter.
+* scan: `layoutOcrLines` measures a wrapped line's indent from the line
+  its entry started on, not the column's edge, which drifts sideways on
+  a curved page; and a wrap must sit within 1.2× the column's tightest
+  line spacing, so a new entry whose leading amount the recognizer
+  dropped isn't glued to the one above.
+* scan: `repairOcrDigits` reads "Va"/"V4" as ¼ and "Vz"/"V2"/"Y2" as ½
+  at the start of a line before a measure.
+
 ## 0.26.0
 
 Reading order for OCR'd pages that are not a single column, lifted

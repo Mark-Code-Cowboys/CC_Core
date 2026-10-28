@@ -1,7 +1,8 @@
 /// Repairs the classic OCR confusions in a quantity position: a
 /// lowercase L / capital I / pipe read for "1", a letter O for "0",
-/// "Z" for "2" and "S" for "5" inside a fraction, and a stray space
-/// inside a fraction. Only touches characters next to digits, slashes
+/// "Z" for "2" and "S" for "5" inside a fraction, a stray space
+/// inside a fraction, and a small typeset ¼ or ½ read as "Va" / "Vz"
+/// in front of a measure. Only touches characters next to digits, slashes
 /// or a following short unit word, so ordinary words are left alone
 /// ("lemon", "Ice", "Oil"). Lifted from Trace Elements' recipe-card
 /// scanner; receipts, scorecards and labels misread the same way.
@@ -17,6 +18,19 @@ String repairOcrDigits(String line) {
       r'^\s*[lI|](?=\s+(?:\d|[½¼¾⅓⅔⅛]|[A-Za-z]{1,12}\.?(?:\s|$))|[\d/½¼¾⅓⅔⅛])',
     ),
     (_) => '1',
+  );
+  // "Va teaspoon", "Vz cup": a small ¼ / ½ glyph read as letters
+  // (ML Kit on a Yellowstone cookbook page, 2026). Only before a
+  // measure, where a two-letter word can't stand.
+  s = s.replaceFirstMapped(
+    RegExp(
+      r'^(\s*)(?:V[a4]|V[z2]|Y2)(?=\s+(?:teaspoons?|tsps?|tablespoons?|'
+      r'tbsps?|cups?|c\.|pounds?|lbs?|ounces?|oz|pints?|pts?|quarts?|qts?|'
+      r'inch(?:es)?)\b)',
+      caseSensitive: false,
+    ),
+    (m) =>
+        '${m.group(1)}${RegExp(r'[a4]$', caseSensitive: false).hasMatch(m.group(0)!) ? '¼' : '½'}',
   );
   // "1 l/2", "2 l/4": a mixed number whose numerator OCR'd as l/I.
   s = s.replaceAllMapped(

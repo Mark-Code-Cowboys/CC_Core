@@ -19,7 +19,7 @@ List<OcrLine> splitOcrLinesAtGaps(
   List<OcrLine> lines, {
   double gapFactor = ocrColumnGapFactor,
 }) {
-  final threshold = gapFactor * _median([for (final l in lines) l.height]);
+  final threshold = gapFactor * _median([for (final l in lines) textHeight(l)]);
   final out = <OcrLine>[];
   for (final line in lines) {
     final words = line.words;
@@ -45,6 +45,18 @@ List<OcrLine> splitOcrLinesAtGaps(
     }
   }
   return out;
+}
+
+/// The height of a line's lettering: the median of its words' heights
+/// when the recognizer gave words, else the line's box. A long line on
+/// a tilted or curved page has an upright box two or three times
+/// taller than its text, and a page median of those hid a narrow
+/// gutter between an ingredient column and the instructions beside it
+/// (Trace Elements, a Yellowstone cookbook page, October 2026).
+double textHeight(OcrLine line) {
+  final words = line.words;
+  if (words == null || words.isEmpty) return line.height;
+  return _median([for (final w in words) w.height]);
 }
 
 OcrLine _lineFromWords(List<OcrWord> words, OcrLine source) {
@@ -89,10 +101,13 @@ OcrLine _lineFromWords(List<OcrWord> words, OcrLine source) {
 ///    right ("BRISKET PLATE … 18.50", "Flour ….. 2 cups") is a table
 ///    and reads row by row, like [mergeOcrRows]. Any other
 ///    multi-band block reads column by column.
-/// 5. Within a column, a line indented past the column's left edge
-///    that sits directly under the previous line is a wrapped
-///    continuation and is joined to it ("¼ cup firmly packed" +
-///    "light brown sugar").
+/// 5. Within a column, a line indented past the left edge of the line
+///    its entry started on, sitting directly under the previous line
+///    (no further down than the column's tightest spacing), is a
+///    wrapped continuation and is joined to it ("¼ cup firmly
+///    packed" + "light brown sugar"). Measured from that line rather
+///    than the column as a whole, because a curved page's column edge
+///    drifts sideways further than an indent.
 ///
 /// An empty string separates columns and blocks, and paragraphs where
 /// the vertical spacing shows one. Single-column pages come back as
@@ -118,7 +133,7 @@ List<String> layoutOcrLines(
       ),
   ]..sort((a, b) => a.y.compareTo(b.y));
 
-  final lineHeight = _median([for (final p in placed) p.line.height]);
+  final lineHeight = _median([for (final p in placed) textHeight(p.line)]);
   final gap = gapFactor * lineHeight;
   final pageLeft = placed.map((p) => p.left).reduce(math.min);
   final pageRight = placed.map((p) => p.right).reduce(math.max);
@@ -129,7 +144,8 @@ List<String> layoutOcrLines(
   for (final p in placed) {
     if (rows.isNotEmpty) {
       final last = rows.last.last;
-      final tolerance = ((p.line.height + last.line.height) / 2) * 0.5;
+      final tolerance =
+          ((textHeight(p.line) + textHeight(last.line)) / 2) * 0.5;
       if ((p.y - last.y).abs() <= tolerance) {
         rows.last.add(p);
         continue;
@@ -201,8 +217,6 @@ List<String> layoutOcrLines(
 List<String> _readColumn(List<_Segment> input, double lineHeight) {
   if (input.isEmpty) return const [];
   final segments = List.of(input)..sort((a, b) => a.y.compareTo(b.y));
-  final lefts = [for (final s in segments) s.left]..sort();
-  final columnLeft = lefts[(lefts.length - 1) ~/ 5];
   final pitches = <double>[
     for (var i = 1; i < segments.length; i++) segments[i].y - segments[i - 1].y,
   ];
@@ -212,14 +226,23 @@ List<String> _readColumn(List<_Segment> input, double lineHeight) {
   final pitch = pitches.isEmpty
       ? lineHeight * 1.4
       : math.max(_quantile(pitches, 0.25), lineHeight);
+  // The spacing of a wrapped line: the tightest the column gets. A
+  // cookbook that sets its ingredients apart (66 px) but wraps them
+  // tight (48 px) shows a new ingredient whose amount the recognizer
+  // missed ("cup (240 ml) buttermilk" for "1 cup …") is not a wrap.
+  final wrapPitch = pitches.isEmpty
+      ? pitch
+      : math.max(_quantile(pitches, 0.1), lineHeight);
 
   final out = <String>[];
+  // Left edge of the line the current entry started on.
+  var entryLeft = segments.first.left;
   for (var i = 0; i < segments.length; i++) {
     final s = segments[i];
     if (i > 0) {
       final drop = s.y - segments[i - 1].y;
-      final indent = s.left - columnLeft;
-      final under = drop <= pitch * 1.45;
+      final indent = s.left - entryLeft;
+      final under = drop <= math.min(pitch * 1.45, wrapPitch * 1.2);
       final indented = indent >= lineHeight * 0.5 && indent <= lineHeight * 4;
       final continues =
           !RegExp(r'^[A-Z]').hasMatch(s.text) ||
@@ -237,6 +260,7 @@ List<String> _readColumn(List<_Segment> input, double lineHeight) {
       }
     }
     out.add(s.text);
+    entryLeft = s.left;
   }
   return out;
 }
