@@ -107,7 +107,10 @@ OcrLine _lineFromWords(List<OcrWord> words, OcrLine source) {
 ///    wrapped continuation and is joined to it ("¼ cup firmly
 ///    packed" + "light brown sugar"). Measured from that line rather
 ///    than the column as a whole, because a curved page's column edge
-///    drifts sideways further than an indent.
+///    drifts sideways further than an indent. A line opening with a
+///    quantity under an entry that opened with one is a new entry,
+///    however far its first glyph sits in ("2 tsp soda" over an italic
+///    "1 tsp. cinnamon").
 ///
 /// An empty string separates columns and blocks, and paragraphs where
 /// the vertical spacing shows one. Single-column pages come back as
@@ -235,8 +238,9 @@ List<String> _readColumn(List<_Segment> input, double lineHeight) {
       : math.max(_quantile(pitches, 0.1), lineHeight);
 
   final out = <String>[];
-  // Left edge of the line the current entry started on.
+  // Left edge and text of the line the current entry started on.
   var entryLeft = segments.first.left;
+  var entryText = segments.first.text;
   for (var i = 0; i < segments.length; i++) {
     final s = segments[i];
     if (i > 0) {
@@ -245,8 +249,9 @@ List<String> _readColumn(List<_Segment> input, double lineHeight) {
       final under = drop <= math.min(pitch * 1.45, wrapPitch * 1.2);
       final indented = indent >= lineHeight * 0.5 && indent <= lineHeight * 4;
       final continues =
-          !RegExp(r'^[A-Z]').hasMatch(s.text) ||
-          !RegExp(r'[.!?:]$').hasMatch(out.isEmpty ? '' : out.last);
+          (!RegExp(r'^[A-Z]').hasMatch(s.text) ||
+              !RegExp(r'[.!?:]$').hasMatch(out.isEmpty ? '' : out.last)) &&
+          !(_startsWithQuantity(s.text) && _startsWithQuantity(entryText));
       if (under &&
           indented &&
           continues &&
@@ -261,9 +266,13 @@ List<String> _readColumn(List<_Segment> input, double lineHeight) {
     }
     out.add(s.text);
     entryLeft = s.left;
+    entryText = s.text;
   }
   return out;
 }
+
+bool _startsWithQuantity(String text) =>
+    RegExp(r'^[\d¼½¾⅓⅔⅛⅜⅝⅞]').hasMatch(text.trim());
 
 double _quantile(List<double> values, double q) {
   if (values.isEmpty) return 0;
@@ -320,7 +329,27 @@ class _Segment {
     right = math.max(right, other.right);
   }
 
-  String get text => _parts.map((p) => p.line.text).join(' ');
+  /// The parts left to right. The recognizer sometimes reads one glyph
+  /// twice: a lone "2" and, overlapping it, a line "2 eggs" (Trace
+  /// Elements, a typed recipe card, October 2026). When a part overlaps
+  /// the one before it and opens with the word that one ends on, that
+  /// word is dropped.
+  String get text {
+    final out = <String>[];
+    for (var i = 0; i < _parts.length; i++) {
+      var words = _parts[i].line.text.trim().split(RegExp(r'\s+'));
+      if (i > 0 && out.isNotEmpty) {
+        final prev = _parts[i - 1];
+        final overlaps = _parts[i].left < prev.right;
+        final prevWords = prev.line.text.trim().split(RegExp(r'\s+'));
+        if (overlaps && words.first == prevWords.last) {
+          words = words.skip(1).toList();
+        }
+      }
+      if (words.isNotEmpty && words.first.isNotEmpty) out.add(words.join(' '));
+    }
+    return out.join(' ');
+  }
 
   bool get startsNumeric => RegExp(r'^[\d¼½¾⅓⅔⅛$€£]').hasMatch(text.trim());
 

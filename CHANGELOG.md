@@ -1,3 +1,18 @@
+## 0.26.2
+
+Fixes from Trace Elements scanning a typed recipe card on a phone
+without an on-device model, where the layout's text goes to the
+review screen as is.
+
+* scan: `layoutOcrLines` drops a word the recognizer read twice on one
+  row: a part that overlaps the part before it and opens with the word
+  that one ends on (ML Kit returned a lone "2" and, overlapping it,
+  "2 eggs", which read "2 2 eggs").
+* scan: `layoutOcrLines` no longer joins a line opening with a quantity
+  to an entry that opened with one as a wrapped continuation. An italic
+  "1 tsp. cinnamon" sat 34 px in from "2 tsp soda" and read
+  "2 tsp soda 1 tsp. cinnamon".
+
 ## 0.26.1
 
 Fixes from Trace Elements scanning a curved cookbook page (ingredient

@@ -37,6 +37,188 @@ OcrLine _line(
   );
 }
 
+/// ML Kit's lines for a typed recipe card (Grandma's Molasses Cookies),
+/// recorded on the Pixel 7 emulator, October 2026: a duplicated "2"
+/// beside "2 eggs", and an italic "1 tsp. cinnamon" set in from the
+/// "2 tsp soda" above it.
+const _molassesCard = [
+  OcrLine(
+    'Grandma\'s Molasses Cookies',
+    left: 31.0,
+    top: 41.0,
+    width: 932.0,
+    height: 60.0,
+    angle: 0.0086,
+    words: [
+      OcrWord('Grandma\'s', left: 31.0, top: 41.0, width: 348.0, height: 55.0),
+      OcrWord('Molasses', left: 401.0, top: 45.0, width: 293.0, height: 53.0),
+      OcrWord('Cookies', left: 720.0, top: 48.0, width: 243.0, height: 53.0),
+    ],
+  ),
+  OcrLine(
+    '1 c. oleo',
+    left: 69.0,
+    top: 182.0,
+    width: 205.0,
+    height: 48.0,
+    angle: 0.0000,
+    words: [
+      OcrWord('1', left: 69.0, top: 182.0, width: 14.0, height: 48.0),
+      OcrWord('c.', left: 92.0, top: 182.0, width: 42.0, height: 48.0),
+      OcrWord('oleo', left: 160.0, top: 182.0, width: 114.0, height: 48.0),
+    ],
+  ),
+  OcrLine(
+    '1c. Sugar',
+    left: 51.0,
+    top: 270.0,
+    width: 265.0,
+    height: 57.0,
+    angle: 0.0342,
+    words: [
+      OcrWord('1c.', left: 51.0, top: 270.0, width: 89.0, height: 51.0),
+      OcrWord('Sugar', left: 167.0, top: 274.0, width: 149.0, height: 53.0),
+    ],
+  ),
+  OcrLine(
+    '1/2 c. molasses',
+    left: 46.0,
+    top: 366.0,
+    width: 422.0,
+    height: 48.0,
+    angle: 0.0000,
+    words: [
+      OcrWord('1/2', left: 46.0, top: 366.0, width: 84.0, height: 48.0),
+      OcrWord('c.', left: 152.0, top: 366.0, width: 42.0, height: 48.0),
+      OcrWord('molasses', left: 222.0, top: 366.0, width: 246.0, height: 48.0),
+    ],
+  ),
+  OcrLine(
+    '2',
+    left: 45.0,
+    top: 453.0,
+    width: 31.0,
+    height: 42.0,
+    angle: 0.0000,
+    words: [OcrWord('2', left: 45.0, top: 453.0, width: 31.0, height: 42.0)],
+  ),
+  OcrLine(
+    '2 eggs',
+    left: 74.0,
+    top: 451.0,
+    width: 154.0,
+    height: 63.0,
+    angle: 0.0732,
+    words: [
+      OcrWord('2', left: 74.0, top: 452.0, width: 18.0, height: 52.0),
+      OcrWord('eggs', left: 97.0, top: 453.0, width: 131.0, height: 61.0),
+    ],
+  ),
+  OcrLine(
+    '4 c. flour',
+    left: 42.0,
+    top: 539.0,
+    width: 254.0,
+    height: 56.0,
+    angle: 0.0079,
+    words: [
+      OcrWord('4', left: 42.0, top: 540.0, width: 31.0, height: 53.0),
+      OcrWord('c.', left: 98.0, top: 540.0, width: 42.0, height: 54.0),
+      OcrWord('flour', left: 158.0, top: 541.0, width: 138.0, height: 54.0),
+    ],
+  ),
+  OcrLine(
+    '2 tsp soda',
+    left: 40.0,
+    top: 632.0,
+    width: 281.0,
+    height: 58.0,
+    angle: -0.0213,
+    words: [
+      OcrWord('2', left: 40.0, top: 638.0, width: 32.0, height: 52.0),
+      OcrWord('tsp', left: 96.0, top: 635.0, width: 81.0, height: 54.0),
+      OcrWord('soda', left: 197.0, top: 633.0, width: 124.0, height: 54.0),
+    ],
+  ),
+  OcrLine(
+    '1 tsp. cinnamon',
+    left: 74.0,
+    top: 726.0,
+    width: 408.0,
+    height: 52.0,
+    angle: 0.0000,
+    words: [
+      OcrWord('1', left: 74.0, top: 726.0, width: 15.0, height: 52.0),
+      OcrWord('tsp.', left: 114.0, top: 726.0, width: 96.0, height: 52.0),
+      OcrWord('cinnamon', left: 218.0, top: 726.0, width: 264.0, height: 52.0),
+    ],
+  ),
+  OcrLine(
+    'butter the size of an egg',
+    left: 40.0,
+    top: 818.0,
+    width: 668.0,
+    height: 50.0,
+    angle: 0.0000,
+    words: [
+      OcrWord('butter', left: 40.0, top: 818.0, width: 174.0, height: 50.0),
+      OcrWord('the', left: 232.0, top: 818.0, width: 84.0, height: 50.0),
+      OcrWord('size', left: 336.0, top: 818.0, width: 104.0, height: 50.0),
+      OcrWord('of', left: 460.0, top: 818.0, width: 58.0, height: 50.0),
+      OcrWord('an', left: 528.0, top: 818.0, width: 62.0, height: 50.0),
+      OcrWord('egg', left: 614.0, top: 818.0, width: 94.0, height: 50.0),
+    ],
+  ),
+  OcrLine(
+    'Mix all together. Roll in balls,',
+    left: 41.0,
+    top: 899.0,
+    width: 801.0,
+    height: 64.0,
+    angle: -0.0137,
+    words: [
+      OcrWord('Mix', left: 41.0, top: 908.0, width: 103.0, height: 55.0),
+      OcrWord('all', left: 164.0, top: 907.0, width: 64.0, height: 54.0),
+      OcrWord('together.', left: 251.0, top: 903.0, width: 238.0, height: 57.0),
+      OcrWord('Roll', left: 544.0, top: 901.0, width: 90.0, height: 55.0),
+      OcrWord('in', left: 637.0, top: 901.0, width: 46.0, height: 54.0),
+      OcrWord('balls,', left: 706.0, top: 899.0, width: 136.0, height: 55.0),
+    ],
+  ),
+  OcrLine(
+    'dip in sugar. Bake 350 - 10 min.',
+    left: 69.0,
+    top: 982.0,
+    width: 833.0,
+    height: 71.0,
+    angle: -0.0228,
+    words: [
+      OcrWord('dip', left: 69.0, top: 999.0, width: 80.0, height: 54.0),
+      OcrWord('in', left: 148.0, top: 997.0, width: 46.0, height: 54.0),
+      OcrWord('sugar.', left: 215.0, top: 994.0, width: 163.0, height: 56.0),
+      OcrWord('Bake', left: 397.0, top: 990.0, width: 136.0, height: 55.0),
+      OcrWord('350', left: 552.0, top: 987.0, width: 100.0, height: 55.0),
+      OcrWord('-', left: 687.0, top: 986.0, width: 15.0, height: 52.0),
+      OcrWord('10', left: 719.0, top: 985.0, width: 72.0, height: 53.0),
+      OcrWord('min.', left: 793.0, top: 982.0, width: 109.0, height: 54.0),
+    ],
+  ),
+  OcrLine(
+    'from Aunt Ruth 1974',
+    left: 40.0,
+    top: 1070.0,
+    width: 579.0,
+    height: 69.0,
+    angle: -0.0259,
+    words: [
+      OcrWord('from', left: 40.0, top: 1082.0, width: 130.0, height: 57.0),
+      OcrWord('Aunt', left: 185.0, top: 1078.0, width: 136.0, height: 57.0),
+      OcrWord('Ruth', left: 337.0, top: 1074.0, width: 128.0, height: 58.0),
+      OcrWord('1974', left: 491.0, top: 1070.0, width: 128.0, height: 57.0),
+    ],
+  ),
+];
+
 void main() {
   group('splitOcrLinesAtGaps', () {
     test('splits at a gap wider than twice the page line height', () {
@@ -236,6 +418,46 @@ void main() {
         '1/2 cup very cold unsalted butter, melted',
         'cup buttermilk',
         '1 teaspoon salt',
+      ]);
+    });
+
+    test('a line opening with a quantity is a new entry, not a wrap', () {
+      final out = layoutOcrLines([
+        _line('2 tsp soda', left: 20, top: 0),
+        _line('1 tsp. cinnamon', left: 36, top: 26),
+        _line('1/2 cup very cold', left: 20, top: 52),
+        _line('unsalted butter', left: 36, top: 78),
+      ]);
+      expect(out, [
+        '2 tsp soda',
+        '1 tsp. cinnamon',
+        '1/2 cup very cold unsalted butter',
+      ]);
+    });
+
+    test('a glyph the recognizer read twice on one row is kept once', () {
+      final out = layoutOcrLines(const [
+        OcrLine('2', left: 45, top: 453, width: 31, height: 42),
+        OcrLine('2 eggs', left: 74, top: 451, width: 154, height: 63),
+        OcrLine('2', left: 45, top: 520, width: 31, height: 42),
+        OcrLine('2 cups', left: 120, top: 520, width: 154, height: 42),
+      ]);
+      expect(out, ['2 eggs', '2 2 cups']);
+    });
+
+    test('a typed recipe card reads one ingredient per line', () {
+      expect(layoutOcrLines(_molassesCard), [
+        "Grandma's Molasses Cookies",
+        '1 c. oleo',
+        '1c. Sugar',
+        '1/2 c. molasses',
+        '2 eggs',
+        '4 c. flour',
+        '2 tsp soda',
+        '1 tsp. cinnamon',
+        'butter the size of an egg',
+        'Mix all together. Roll in balls, dip in sugar. Bake 350 - 10 min.',
+        'from Aunt Ruth 1974',
       ]);
     });
 
