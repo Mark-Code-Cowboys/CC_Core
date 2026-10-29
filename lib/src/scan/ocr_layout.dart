@@ -16,19 +16,24 @@ const double ocrColumnGapFactor = 2.0;
 /// rather than the line's own, because a stray tall glyph on one line
 /// would otherwise hide a gutter that every other line shows. Lines
 /// without word geometry pass through as they are.
+///
+/// With [requireAlignment], a gap splits only where the run beyond it
+/// lines up with a nearby line's left (or right) edge, the way a real
+/// column does. A headnote line whose ellipsis the recognizer dropped
+/// ("spectacular . . . and it's a spectacle") lines up with nothing.
+/// Off by default: a lone label/value row (a nameplate, a receipt
+/// total) has nothing to line up with.
 List<OcrLine> splitOcrLinesAtGaps(
   List<OcrLine> lines, {
   double gapFactor = ocrColumnGapFactor,
+  bool requireAlignment = false,
 }) {
-  final threshold = gapFactor * _median([for (final l in lines) textHeight(l)]);
-  final out = <OcrLine>[];
-  for (final line in lines) {
-    final words = line.words;
-    if (words == null || words.length < 2) {
-      out.add(line);
-      continue;
-    }
-    final sorted = List.of(words)..sort((a, b) => a.left.compareTo(b.left));
+  final height = _median([for (final l in lines) textHeight(l)]);
+  final threshold = gapFactor * height;
+  // Word runs per line, split at every column-wide gap.
+  List<List<OcrWord>> runsOf(OcrLine line) {
+    final sorted = List.of(line.words!)
+      ..sort((a, b) => a.left.compareTo(b.left));
     final runs = <List<OcrWord>>[
       [sorted.first],
     ];
@@ -37,6 +42,54 @@ List<OcrLine> splitOcrLinesAtGaps(
         runs.add([w]);
       } else {
         runs.last.add(w);
+      }
+    }
+    return runs;
+  }
+
+  // Where a column could start on each line: its own left edge, and
+  // the far side of each of its gaps (a page glued across the gutter
+  // on every row has no line that starts at the right column).
+  final starts = <(OcrLine, double)>[
+    for (final l in lines) ...[
+      (l, l.left),
+      if (l.words != null && l.words!.length > 1)
+        for (final run in runsOf(l).skip(1)) (l, run.first.left),
+    ],
+  ];
+
+  // A run lines up by its left edge with another line's column start
+  // nearby, or by its right edge when it is a short value (a price).
+  // A run of prose after a dropped ellipsis ("spectacular . . . and
+  // it's a spectacle") lines up with neither.
+  bool alignsWithColumn(List<OcrWord> run, OcrLine source) {
+    bool near(OcrLine other) =>
+        !identical(other, source) &&
+        (other.center.y - source.center.y).abs() <= height * 8;
+    for (final (other, x) in starts) {
+      if (near(other) && (x - run.first.left).abs() <= height) return true;
+    }
+    if (run.length <= 2) {
+      for (final other in lines) {
+        if (near(other) && (other.right - run.last.right).abs() <= height) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  final out = <OcrLine>[];
+  for (final line in lines) {
+    final words = line.words;
+    if (words == null || words.length < 2) {
+      out.add(line);
+      continue;
+    }
+    final runs = runsOf(line);
+    for (var i = runs.length - 1; requireAlignment && i > 0; i--) {
+      if (!alignsWithColumn(runs[i], line)) {
+        runs[i - 1].addAll(runs.removeAt(i));
       }
     }
     if (runs.length == 1) {
@@ -89,10 +142,13 @@ OcrLine _lineFromWords(List<OcrWord> words, OcrLine source) {
 ///
 /// How it reads the page:
 ///
-/// 1. Lines are split at column-wide word gaps ([splitOcrLinesAtGaps])
-///    and the page's tilt is taken out ([estimateSkew]).
+/// 1. Lines are split at column-wide word gaps that line up with a
+///    column ([splitOcrLinesAtGaps] with `requireAlignment`) and the
+///    page's tilt is taken out ([estimateSkew]).
 /// 2. Lines on one level form a row, as in [mergeOcrRows]; a row with
-///    a column-wide gap between its lines has one segment per column.
+///    a column-wide gap between its lines has one segment per column,
+///    and so does a row with a narrower gap (over one line height)
+///    where another row's column starts.
 /// 3. Consecutive rows whose segments fall into the same horizontal
 ///    bands form a block. A segment reaching across every band
 ///    (full-width prose under two columns) ends the block; one that
@@ -102,7 +158,7 @@ OcrLine _lineFromWords(List<OcrWord> words, OcrLine source) {
 ///    right ("BRISKET PLATE … 18.50", "Flour ….. 2 cups") is a table
 ///    and reads row by row, like [mergeOcrRows]. Any other
 ///    multi-band block reads column by column.
-/// 5. Within a column, a line indented past the left edge of the line
+/// 5. Within a column, a line indented (0.35 line heights or more) past the left edge of the line
 ///    its entry started on, sitting directly under the previous line
 ///    (no further down than the column's tightest spacing), is a
 ///    wrapped continuation and is joined to it ("¼ cup firmly
@@ -123,7 +179,11 @@ List<String> layoutOcrLines(
   double gapFactor = ocrColumnGapFactor,
 }) {
   if (lines.isEmpty) return const [];
-  final split = splitOcrLinesAtGaps(lines, gapFactor: gapFactor);
+  final split = splitOcrLinesAtGaps(
+    lines,
+    gapFactor: gapFactor,
+    requireAlignment: true,
+  );
   final skew = estimateSkew(split);
   final cosA = math.cos(skew);
   final sinA = math.sin(skew);
@@ -157,19 +217,55 @@ List<String> layoutOcrLines(
     }
     rows.add([p]);
   }
-  final segmentedRows = <List<_Segment>>[];
-  for (final row in rows) {
-    row.sort((a, b) => a.left.compareTo(b.left));
-    final segments = <_Segment>[];
-    for (final p in row) {
-      if (segments.isNotEmpty && p.left - segments.last.right <= gap) {
-        segments.last.add(p);
-      } else {
-        segments.add(_Segment(p));
+  List<List<_Segment>> segment(bool Function(_Placed p, double space) splits) {
+    final out = <List<_Segment>>[];
+    for (final row in rows) {
+      row.sort((a, b) => a.left.compareTo(b.left));
+      final segments = <_Segment>[];
+      for (final p in row) {
+        if (segments.isNotEmpty && !splits(p, p.left - segments.last.right)) {
+          segments.last.add(p);
+        } else {
+          segments.add(_Segment(p));
+        }
       }
+      out.add(segments);
     }
-    segmentedRows.add(segments);
+    return out;
   }
+
+  // Where columns start, from the rows with a column-wide gap; then a
+  // row whose gap is narrower (a long ingredient heading reaching
+  // toward the instructions: "For the Pickled Jalapeño Sauce" beside
+  // "To prepare the sauce…", 70 px apart) still splits there.
+  //
+  // Either way the far side must line up with a nearby line on another
+  // row, as a column does: a headnote word the recognizer set apart
+  // ("spectacular" 100 px left of "and it's a spectacle…", the
+  // ellipsis between them dropped) lines up with nothing and stays in
+  // its row's text.
+  // By its left edge, or by its centre for a centred block (a tip box
+  // beside the ingredients).
+  bool aligned(_Placed p) => placed.any(
+    (q) =>
+        !identical(q, p) &&
+        (q.y - p.y).abs() > textHeight(p.line) * 0.5 &&
+        (q.y - p.y).abs() <= lineHeight * 8 &&
+        ((q.left - p.left).abs() <= lineHeight ||
+            ((q.left + q.right) / 2 - (p.left + p.right) / 2).abs() <=
+                lineHeight),
+  );
+  final columnStarts = [
+    for (final segments in segment((p, space) => space > gap && aligned(p)))
+      for (final s in segments.skip(1)) s.left,
+  ];
+  final segmentedRows = segment(
+    (p, space) =>
+        space > lineHeight &&
+        aligned(p) &&
+        (space > gap ||
+            columnStarts.any((c) => (p.left - c).abs() <= lineHeight)),
+  );
 
   // Blocks of rows that share horizontal bands.
   final blocks = <_Block>[];
@@ -248,7 +344,13 @@ List<String> _readColumn(List<_Segment> input, double lineHeight) {
       final drop = s.y - segments[i - 1].y;
       final indent = s.left - entryLeft;
       final under = drop <= math.min(pitch * 1.45, wrapPitch * 1.2);
-      final indented = indent >= lineHeight * 0.5 && indent <= lineHeight * 4;
+      // A line opening in lower case is a wrap on less evidence: the
+      // narrow "chopped" under "(hot or mild), drained and" sat 16 px
+      // in at a 46 px line height.
+      final lower = RegExp(r'^[a-z]').hasMatch(s.text);
+      final indented =
+          indent >= lineHeight * (lower ? 0.2 : 0.35) &&
+          indent <= lineHeight * 4;
       final continues =
           (!RegExp(r'^[A-Z]').hasMatch(s.text) ||
               !RegExp(r'[.!?:]$').hasMatch(out.isEmpty ? '' : out.last)) &&
@@ -397,9 +499,24 @@ class _Block {
       if (segments.length > 1) return null;
       return _hits(segments.single, slack).isEmpty ? null : [0];
     }
+    // A row with a segment per column, each over a different band,
+    // reads into those bands even where one segment's edge reaches
+    // within the slack of the next band: a curved page's instructions
+    // drift left toward a long ingredient heading's right edge.
+    if (segments.length > 1) {
+      final best = [for (final s in segments) _bestBand(s, slack)];
+      var distinct = !best.contains(-1);
+      for (var i = 1; distinct && i < best.length; i++) {
+        if (best[i] <= best[i - 1]) distinct = false;
+      }
+      if (distinct) return best;
+    }
     // Merge straddled bands before placing anything, so indices hold.
+    // Straddling takes real overlap (past the slack) with each band; a
+    // line that only comes within the slack of a neighbouring band
+    // belongs to the one it sits over.
     for (final s in segments) {
-      final hits = _hits(s, slack);
+      final hits = _hits(s, -slack);
       if (hits.length > 1) {
         if (hits.first == 0 && hits.last == bands.length - 1) return null;
         _merge(hits);
@@ -408,8 +525,8 @@ class _Block {
     final result = <int>[];
     var fresh = bands.length;
     for (final s in segments) {
-      final hits = _hits(s, slack);
-      result.add(hits.isEmpty ? fresh++ : hits.single);
+      final best = _bestBand(s, slack);
+      result.add(best < 0 ? fresh++ : best);
     }
     return result;
   }
@@ -418,6 +535,21 @@ class _Block {
     for (var i = 0; i < bands.length; i++)
       if (bands[i].overlaps(s, slack)) i,
   ];
+
+  /// The band [s] overlaps most, or -1 when it touches none.
+  int _bestBand(_Segment s, double slack) {
+    var best = -1;
+    var most = 0.0;
+    for (final i in _hits(s, slack)) {
+      final overlap =
+          math.min(s.right, bands[i].right) - math.max(s.left, bands[i].left);
+      if (best < 0 || overlap > most) {
+        best = i;
+        most = overlap;
+      }
+    }
+    return best;
+  }
 
   void _merge(List<int> indices) {
     final keep = bands[indices.first];

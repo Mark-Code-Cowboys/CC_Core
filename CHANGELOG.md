@@ -1,3 +1,27 @@
+## 0.26.4
+
+Fixes from Trace Elements scanning Yellowstone cookbook pages (a narrow
+ingredient column beside the instructions, a centred headnote above,
+the page curving toward the spine) on a Pixel 9 Pro XL.
+
+* scan: `splitOcrLinesAtGaps` takes `requireAlignment` (off by
+  default): a gap splits only where the run beyond it lines up with a
+  nearby line's column start, or by its right edge for a short value.
+  `layoutOcrLines` turns it on, so a headnote whose ellipsis the
+  recognizer dropped ("spectacular . . . and it's a spectacle") stays
+  one line.
+* scan: `layoutOcrLines` splits a row at a gap narrower than the column
+  gap (over one line height) where another row's column starts, and
+  only where the far side lines up with a line on another row (by left
+  edge or centre). A long ingredient heading beside the instructions
+  ("For the Pickled Jalapeño Sauce" / "To prepare the sauce…") reads as
+  two columns; a headnote word set apart reads in its row.
+* scan: a row's segments join the band they overlap most, and a segment
+  straddles bands only with real overlap past the slack, so a curved
+  page's instructions drifting toward a heading's edge stay one column.
+* scan: hanging indents of 0.35 line heights (0.2 for a line opening in
+  lower case) count as wrapped continuations.
+
 ## 0.26.3
 
 Fixes from Trace Elements scanning a typed family cookbook on a Pixel 9
