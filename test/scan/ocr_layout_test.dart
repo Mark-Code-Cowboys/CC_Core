@@ -602,4 +602,22 @@ void main() {
       );
     });
   });
+
+  test('a line opening with a spelled-out ½ ("V2 C.") is a quantity '
+      'line, so the next quantity line is not its wrap', () {
+    // A typed family cookbook page, Pixel 9 Pro XL, 2026-10-29: "2
+    // eggs, beaten" sat a little in from "V2 C. dry bread crumbs".
+    final lines = [
+      _line('1/3 c. chopped onions', left: 100, top: 100),
+      _line('V2 C. dry bread crumbs', left: 100, top: 125),
+      _line('2 eggs, beaten', left: 112, top: 150),
+      _line('2 tsp. salt', left: 100, top: 175),
+    ];
+    expect(layoutOcrLines(lines), [
+      '1/3 c. chopped onions',
+      'V2 C. dry bread crumbs',
+      '2 eggs, beaten',
+      '2 tsp. salt',
+    ]);
+  });
 }

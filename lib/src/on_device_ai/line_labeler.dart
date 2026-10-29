@@ -139,7 +139,9 @@ class LineLabeler {
       final spec = known[code];
       if (spec == null) continue;
       codes[n] = code;
-      final r = m.group(3)?.trim();
+      // Gemini Nano sometimes chains readings ("I => 1 lb => 1 pound
+      // bulk pork sausage"); the last one is the whole line.
+      final r = m.group(3)?.split('=>').last.trim();
       if (spec.allowReading && r != null && r.isNotEmpty) readings[n] = r;
     }
     return LabeledLines([

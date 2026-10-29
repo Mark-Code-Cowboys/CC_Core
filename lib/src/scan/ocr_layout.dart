@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'ocr_repair.dart';
 import 'ocr_types.dart';
 
 /// Word gaps wider than this many line heights separate columns.
@@ -271,8 +272,10 @@ List<String> _readColumn(List<_Segment> input, double lineHeight) {
   return out;
 }
 
+/// Read through [repairOcrDigits]: "V2 C. dry bread crumbs" opens
+/// with a ½ the recognizer spelled in letters.
 bool _startsWithQuantity(String text) =>
-    RegExp(r'^[\d¼½¾⅓⅔⅛⅜⅝⅞]').hasMatch(text.trim());
+    RegExp(r'^[\d¼½¾⅓⅔⅛⅜⅝⅞]').hasMatch(repairOcrDigits(text).trim());
 
 double _quantile(List<double> values, double q) {
   if (values.isEmpty) return 0;

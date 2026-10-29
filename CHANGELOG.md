@@ -1,3 +1,17 @@
+## 0.26.3
+
+Fixes from Trace Elements scanning a typed family cookbook on a Pixel 9
+Pro XL with Gemini Nano.
+
+* scan: `repairOcrDigits` reads "V2 C." as "½ C." (the abbreviated cup
+  ends in a period, which the unit lookahead missed) and "16 0Z" as
+  "16 oz".
+* scan: `layoutOcrLines` treats a line opening with a repairable
+  quantity ("V2 C. dry bread crumbs") as a quantity line, so "2 eggs,
+  beaten" below it is no longer joined to it as a wrap.
+* on_device_ai: `LineLabeler.parse` keeps the last part of a chained
+  reading ("I => 1 lb => 1 pound bulk pork sausage").
+
 ## 0.26.2
 
 Fixes from Trace Elements scanning a typed recipe card on a phone

@@ -39,6 +39,13 @@ void main() {
     },
   );
 
+  test('a chained reading keeps its last part', () {
+    final l = labeler.parse('1: I => 1 lb => 1 pound bulk pork sausage', [
+      '1 lb. bulk pork sausage',
+    ]);
+    expect(l.lines.single.reading, '1 pound bulk pork sausage');
+  });
+
   test('unusable answers and unavailable models give null', () async {
     final noItems = LineLabeler(
       model: FakeOnDeviceTextModel(answers: ['1: T']),

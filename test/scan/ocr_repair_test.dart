@@ -37,4 +37,13 @@ void main() {
       expect(repairOcrDigits(w), w);
     }
   });
+
+  test('"V2 C." before an abbreviated cup, "0Z" after an amount', () {
+    expect(repairOcrDigits('V2 C. dry bread crumbs'), '½ C. dry bread crumbs');
+    expect(
+      repairOcrDigits('1- 16 0Z can whole berry cranberry sauce'),
+      '1- 16 oz can whole berry cranberry sauce',
+    );
+    expect(repairOcrDigits('Ozark ham'), 'Ozark ham');
+  });
 }
