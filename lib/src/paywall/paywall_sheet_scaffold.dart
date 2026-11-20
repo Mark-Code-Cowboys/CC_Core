@@ -4,6 +4,12 @@ import 'store_products.dart';
 
 /// Opens a modal bottom sheet sized to its content — the standard way
 /// Code Cowboys apps present a paywall built on [PaywallSheetScaffold].
+///
+/// The sheet gets its own [ScaffoldMessenger], so a snackbar shown from
+/// inside it ([runStoreAction], or `ScaffoldMessenger.of(context)` in
+/// the builder) appears on the sheet. Without it the snackbar lands on
+/// the page under the modal, hidden, and a store that isn't ready looks
+/// like dead buttons.
 Future<T?> showPaywallModal<T>(
   BuildContext context, {
   required WidgetBuilder builder,
@@ -11,12 +17,45 @@ Future<T?> showPaywallModal<T>(
   return showModalBottomSheet<T>(
     context: context,
     isScrollControlled: true,
-    builder: builder,
+    builder: (context) => SheetSnackBarHost(child: Builder(builder: builder)),
   );
+}
+
+/// Gives a modal sheet its own [ScaffoldMessenger] and a transparent
+/// [Scaffold] laid over it, so snackbars from inside the sheet render on
+/// the sheet instead of behind it. The sheet's content still sizes the
+/// sheet and receives every tap; the overlay ignores pointers.
+class SheetSnackBarHost extends StatelessWidget {
+  /// Wraps [child], the sheet's content.
+  const SheetSnackBarHost({required this.child, super.key});
+
+  /// The sheet's content.
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return ScaffoldMessenger(
+      child: Stack(
+        fit: StackFit.passthrough,
+        children: [
+          child,
+          const Positioned.fill(
+            child: IgnorePointer(
+              child: Scaffold(
+                backgroundColor: Colors.transparent,
+                body: SizedBox.shrink(),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 /// Runs a store action (buy, restore) and turns
 /// [StoreUnavailableException] into a snackbar instead of a crash.
+/// Inside [showPaywallModal] the snackbar shows on the sheet.
 Future<void> runStoreAction(
   BuildContext context,
   Future<void> Function() action, {

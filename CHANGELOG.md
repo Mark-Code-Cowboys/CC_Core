@@ -1,3 +1,14 @@
+## 0.26.5
+
+Fix from Back Forty's first Play internal test: a store that wasn't
+ready yet made the paywall's buttons look dead.
+
+* paywall: `showPaywallModal` gives the sheet its own
+  `ScaffoldMessenger` (new public `SheetSnackBarHost`), so
+  `runStoreAction`'s "Store not available" and "Store error" snackbars
+  show on the sheet. They used to land on the page under the modal,
+  where nobody could see them. Apps pick this up with no code change.
+
 ## 0.26.4
 
 Fixes from Trace Elements scanning Yellowstone cookbook pages (a narrow
