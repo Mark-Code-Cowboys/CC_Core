@@ -32,7 +32,7 @@ own barrel file, re-exported by `lib/cc_core.dart`.
 | `io/` | Export (CSV/JSON), backup/restore (single-file archive), cloud backup slot (Google Drive app-data / iCloud container), share-sheet seam, safe readers for documents from another phone |
 | `journal/` | Entry/tag/rating/photo-attachment models, Drift repository, search |
 | `trends/` | Calendar heatmap, time-window queries, basic chart widgets |
-| `onboarding/` | First-run flow, consent/privacy screen, "your data never leaves your phone" boilerplate |
+| `onboarding/` | First-run flow, consent/privacy screen, privacy line (`kPrivacyBoilerplate`, plus `kPrivacyMlKitNote` for ML Kit features — see doc/PRIVACY.md) |
 | `theme/` | Base theme consuming a per-app token class (colors, type scale, corner radii) |
 | `scan/` | On-device transcription: document camera (edge detection, multi-page, gallery), ML Kit OCR, row merging, OCR digit repair. Per-app parsers turn lines into fields; the user confirms everything |
 | `notebook_import/` | Batch flavor of `scan/`: multi-page capture → per-page parse → review list → bulk insert |

@@ -32,6 +32,10 @@ void main() {
     expect(find.text('The book of everywhere.'), findsOneWidget);
     expect(find.text('Not a gadget.'), findsOneWidget);
     expect(find.text(kPrivacyBoilerplate), findsOneWidget);
+    // The shared promise must stay true for every app (ML Kit ships in
+    // cc_core; some apps back up to the user's cloud).
+    expect(kPrivacyBoilerplate.toLowerCase(), isNot(contains('analytics')));
+    expect(kPrivacyBoilerplate.toLowerCase(), isNot(contains('no cloud')));
     await tester.tap(find.text('Start'));
     expect(tapped, isTrue);
   });

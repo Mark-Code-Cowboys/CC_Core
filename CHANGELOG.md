@@ -1,3 +1,19 @@
+## 0.26.6
+
+Privacy line made true for every app (found while testing Kick Rocks on a
+Pixel: ML Kit queued usage logs for `firebaselogging.googleapis.com`).
+
+* onboarding: `kPrivacyBoilerplate` is now "Your data lives on this
+  phone. No account needed. No ads." It no longer claims "no analytics"
+  (cc_core depends on Google ML Kit, which sends Google usage metrics:
+  device model, OS, app version, latency — never content) or "no cloud"
+  (some apps back up to the user's own cloud). Apps pick this up with no
+  code change.
+* onboarding: new `kPrivacyMlKitNote` for apps that use an ML Kit feature
+  (scan/OCR, on-device AI) to append to their privacy line.
+* doc/PRIVACY.md: what ML Kit sends and how to answer Play's Data safety
+  form.
+
 ## 0.26.5
 
 Fix from Back Forty's first Play internal test: a store that wasn't

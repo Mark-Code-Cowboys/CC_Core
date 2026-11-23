@@ -1,8 +1,20 @@
 import 'package:flutter/material.dart';
 
-/// The line every CC app promises on first run.
-const kPrivacyBoilerplate =
-    'Everything stays on this phone. No account, no cloud, no analytics.';
+/// The line every CC app promises on first run. True for every app in
+/// the suite: data lives on the phone (optional backup/sharing is the
+/// user's choice), no account is required, no ads.
+///
+/// It deliberately does **not** say "no analytics" or "no cloud": cc_core
+/// depends on Google ML Kit (`google_mlkit_text_recognition`, for scan),
+/// and ML Kit sends Google usage metrics (device model, OS, app version,
+/// latency — never content); some apps offer cloud backup. Apps that use
+/// an ML Kit feature should append [kPrivacyMlKitNote] and declare it in
+/// Play's Data safety form (see doc/PRIVACY.md).
+const kPrivacyBoilerplate = 'Your data lives on this phone. No account needed. No ads.';
+
+/// For apps that use an ML Kit feature (scan/OCR, on-device AI):
+/// `privacyLine: '$kPrivacyBoilerplate $kPrivacyMlKitNote'`.
+const kPrivacyMlKitNote = 'Google’s on-device ML sends Google usage stats — never your content.';
 
 /// The shared first-run layout: hero icon, the app's positioning line
 /// front and center, supporting copy, the privacy promise, and the
