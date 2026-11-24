@@ -6,13 +6,22 @@ import 'suite_feed.dart';
 /// Rocks is on the phone, so store builds don't advertise it otherwise.
 class SuiteFeedTile extends StatefulWidget {
   /// A row for [feed].
-  const SuiteFeedTile({super.key, required this.feed, this.what = 'entries'});
+  const SuiteFeedTile({
+    super.key,
+    required this.feed,
+    this.what = 'entries',
+    this.withPin = true,
+  });
 
   /// This app's link to Kick Rocks.
   final SuiteFeed feed;
 
   /// What this app logs, for the subtitle ("meals", "coffee stops").
   final String what;
+
+  /// Whether this app sends a location (Table Encore does; Fresh Pot,
+  /// a home-brewing journal, doesn't). Only changes the subtitle.
+  final bool withPin;
 
   @override
   State<SuiteFeedTile> createState() => _SuiteFeedTileState();
@@ -46,8 +55,9 @@ class _SuiteFeedTileState extends State<SuiteFeedTile> {
       secondary: const Icon(Icons.hiking),
       title: const Text('Add to Kick Rocks automatically'),
       subtitle: Text(
-        'New ${widget.what} land on the Kick Rocks trip you were on, '
-        'with their pin. Stays on this phone.',
+        'New ${widget.what} land on the Kick Rocks trip you were on'
+        '${widget.withPin ? ', with their pin' : ''}. Only trips: the rest '
+        'stays here. Stays on this phone.',
       ),
       value: _on,
       onChanged: (v) {
