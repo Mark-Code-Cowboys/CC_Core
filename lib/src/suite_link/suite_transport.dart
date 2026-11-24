@@ -19,7 +19,8 @@ abstract class SuiteTransport {
   /// once; null after that or when there wasn't one.
   Future<String?> initialOpen();
 
-  /// Back-links that arrive while the app is running.
+  /// Back-links that arrive while the app is running. One that arrives
+  /// before a handler is set waits for [initialOpen].
   void onOpen(void Function(String link) handler);
 }
 
@@ -57,10 +58,13 @@ class MethodChannelSuiteTransport implements SuiteTransport {
 
   @override
   void onOpen(void Function(String link) handler) {
+    // The plugin keeps the newest link until it's read, so a link that
+    // arrived while no handler was listening isn't lost; "open" is just
+    // the nudge to read it.
     _ch.setMethodCallHandler((call) async {
-      if (call.method == 'open' && call.arguments is String) {
-        handler(call.arguments as String);
-      }
+      if (call.method != 'open') return;
+      final link = await initialOpen();
+      if (link != null) handler(link);
     });
   }
 }
@@ -79,11 +83,18 @@ class FakeSuiteTransport implements SuiteTransport {
   /// Envelopes [share] accepted.
   final shared = <String>[];
 
+  /// Every [deliver] call, taken or not: proves a feed was attempted.
+  final deliverAttempts = <String>[];
+
+  /// Every [share] call, taken or not.
+  final shareAttempts = <String>[];
+
   String? _first(List<String> packages) =>
       packages.contains(installedPackage) ? installedPackage : null;
 
   @override
   Future<String?> deliver(String text, List<String> packages) async {
+    deliverAttempts.add(text);
     final p = _first(packages);
     if (p != null) delivered.add(text);
     return p;
@@ -91,6 +102,7 @@ class FakeSuiteTransport implements SuiteTransport {
 
   @override
   Future<String?> share(String text, List<String> packages) async {
+    shareAttempts.add(text);
     final p = _first(packages);
     if (p != null) shared.add(text);
     return p;
