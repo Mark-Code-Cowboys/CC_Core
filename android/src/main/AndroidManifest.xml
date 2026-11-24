@@ -1,0 +1,9 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Suite Link: a sibling app can see Kick Rocks (prod and the dev
+         build used for testing) to hand it entries. Package visibility
+         only; no permission. -->
+    <queries>
+        <package android:name="com.codecowboys.kickrocks" />
+        <package android:name="com.codecowboys.kickrocks.dev" />
+    </queries>
+</manifest>

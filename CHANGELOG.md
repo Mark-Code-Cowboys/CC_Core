@@ -1,3 +1,24 @@
+## 0.27.0
+
+New **suite_link** module: Code Cowboys apps hand entries to Kick Rocks
+(found on a real outing: a Table Encore meal logged mid-trip never reached
+the Kick Rocks track, because no sibling could send).
+
+* cc_core is now a Flutter **plugin** (Android only): `CcCorePlugin.kt`.
+  Its manifest adds `<queries>` for `com.codecowboys.kickrocks` and
+  `.kickrocks.dev`. Other platforms answer null from Dart.
+* `SuiteMoment`: the v1 envelope (moved from Kick Rocks).
+* `SuiteFeed`: `feed()` after every save (quiet: inserted into Kick Rocks'
+  `<pkg>.suite` content provider inbox, no screen switch; respects the
+  "Add to Kick Rocks automatically" switch, default on); `send()` for a
+  "Send to Kick Rocks" button (opens Kick Rocks with the entry);
+  `listenForOpens()` for back-links `<scheme>://open/<id>`.
+* `SuiteFeedTile`: the settings switch; hidden unless Kick Rocks is installed.
+* `SuiteTransport` seam with `FakeSuiteTransport` for tests.
+
+Each app still adds: the save hook, the button, the tile, and a VIEW
+intent filter for its scheme (`<data android:scheme="x" android:host="open"/>`).
+
 ## 0.26.7
 
 * onboarding: `kPrivacyBoilerplate` leads with the strongest true claim:
