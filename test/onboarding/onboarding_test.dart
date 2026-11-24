@@ -36,6 +36,7 @@ void main() {
     // cc_core; some apps back up to the user's cloud).
     expect(kPrivacyBoilerplate.toLowerCase(), isNot(contains('analytics')));
     expect(kPrivacyBoilerplate.toLowerCase(), isNot(contains('no cloud')));
+    expect(kPrivacyBoilerplate, startsWith('We run no servers'));
     await tester.tap(find.text('Start'));
     expect(tapped, isTrue);
   });

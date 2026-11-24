@@ -1,9 +1,17 @@
 # Privacy line and store disclosures (all CC apps)
 
 ## The first-run line
-`kPrivacyBoilerplate`: "Your data lives on this phone. No account needed. No ads."
-It has to be true for every app that uses the default, so it doesn't promise
-"no analytics" or "no cloud".
+`kPrivacyBoilerplate`: "We run no servers and hold none of your data — it lives
+on this phone. No account needed. No ads."
+
+Lead with "no servers": it's the real promise, and the ML Kit note is a
+footnote to it. It has to be true for every app that uses the default, so it
+doesn't promise "no analytics" or "no cloud" (backup goes to the user's own
+Drive/iCloud, which we can't see).
+
+**Apps with a server or accounts can't use it.** Kick Rocks (Crew: sign-in,
+shared trips, media, comments, push tokens) writes its own line and policy
+naming what the server holds, and answers Data safety for that data too.
 
 Apps that **use** an ML Kit feature (cc_core scan/OCR, on-device AI) append
 `kPrivacyMlKitNote` ("Google's on-device ML sends Google usage stats — never

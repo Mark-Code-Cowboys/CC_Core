@@ -1,3 +1,10 @@
+## 0.26.7
+
+* onboarding: `kPrivacyBoilerplate` leads with the strongest true claim:
+  "We run no servers and hold none of your data — it lives on this phone.
+  No account needed. No ads." Documented that apps with a server or
+  accounts (Kick Rocks) must write their own line.
+
 ## 0.26.6
 
 Privacy line made true for every app (found while testing Kick Rocks on a

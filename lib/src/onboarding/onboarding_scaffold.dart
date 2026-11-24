@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 
-/// The line every CC app promises on first run. True for every app in
-/// the suite: data lives on the phone (optional backup/sharing is the
-/// user's choice), no account is required, no ads.
+/// The line every CC app without a backend promises on first run. It
+/// leads with the strongest true thing: Code Cowboys runs no servers for
+/// the app, so it holds none of the user's data (optional backup goes to
+/// the user's *own* Drive/iCloud). No account is required, no ads.
+///
+/// Apps that run a server or have accounts (Kick Rocks Crew) must **not**
+/// use this line; they write their own that names what the server holds.
 ///
 /// It deliberately does **not** say "no analytics" or "no cloud": cc_core
 /// depends on Google ML Kit (`google_mlkit_text_recognition`, for scan),
@@ -10,7 +14,7 @@ import 'package:flutter/material.dart';
 /// latency — never content); some apps offer cloud backup. Apps that use
 /// an ML Kit feature should append [kPrivacyMlKitNote] and declare it in
 /// Play's Data safety form (see doc/PRIVACY.md).
-const kPrivacyBoilerplate = 'Your data lives on this phone. No account needed. No ads.';
+const kPrivacyBoilerplate = 'We run no servers and hold none of your data — it lives on this phone. No account needed. No ads.';
 
 /// For apps that use an ML Kit feature (scan/OCR, on-device AI):
 /// `privacyLine: '$kPrivacyBoilerplate $kPrivacyMlKitNote'`.
