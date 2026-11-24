@@ -19,6 +19,20 @@ the Kick Rocks track, because no sibling could send).
 Each app still adds: the save hook, the button, the tile, and a VIEW
 intent filter for its scheme (`<data android:scheme="x" android:host="open"/>`).
 
+Hardened before release (adversarial review + Pixel testing):
+
+* `SuiteMoment.decode` treats input as hostile: strict types, finite
+  in-range pins, URL-safe ids, rune-safe clipping; only
+  `FormatException` (a newer version is `NewerSuiteVersion`, kept for later).
+* `dateOnly` envelopes for entries with a picked date and no time.
+* Ids go out namespaced per install (`visit-12~abc123`) and back-links
+  carry the entry time, so reinstalls can't collide or open the wrong entry;
+  `listenForOpens(open, timeOf:, missing:)` checks links from other installs.
+* Back-links wait while nobody listens (onboarding) and are never replayed
+  (Recents, recreation). `deliver` runs off the main thread. Shares carry
+  sender identity on Android 14+. `send` ignores a double tap.
+* `SuiteFeedTile(withPin:)`. `FakeSuiteTransport` records every attempt.
+
 ## 0.26.7
 
 * onboarding: `kPrivacyBoilerplate` leads with the strongest true claim:
