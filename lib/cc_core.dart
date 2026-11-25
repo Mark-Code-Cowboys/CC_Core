@@ -13,6 +13,7 @@ export 'src/notifications/notifications.dart';
 export 'src/on_device_ai/on_device_ai.dart';
 export 'src/onboarding/onboarding.dart';
 export 'src/paywall/paywall.dart';
+export 'src/places/places.dart';
 export 'src/scan/scan.dart';
 export 'src/suite_link/suite_link.dart';
 export 'src/text/text.dart';

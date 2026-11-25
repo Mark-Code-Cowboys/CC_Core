@@ -1,3 +1,20 @@
+## 0.28.0
+
+New **places** module, additive: saved places + visits + the
+"back here again?" start of a visit, generic over the app's place and
+item types (extracted from Table Encore's restaurants/visits for Fresh
+Pot's cafés). Table Encore keeps its own tables and is unaffected.
+
+* `PinnedPlaces` / `PlaceVisits`: drift base tables apps subclass;
+  `PinnedPlaces` carries Table Encore's three pin CHECKs.
+* `PlacePolicy` (radius, refine threshold, max fix age; no defaults),
+  `matchPlacesHere<P>` → `PlaceMatchFound` / `PlaceMatchNoFix`,
+  `pinUpdateFor`, `checkPinFields`.
+* `recallAtPlace<I>`: "what did I have here last time" plus the usual.
+* No location plugin in core (an unused location API would trip App
+  Store review for apps that never ask); apps keep their own
+  `LocationSource`.
+
 ## 0.27.1
 
 Fixes found while edge-testing Fresh Pot on a Pixel emulator.
