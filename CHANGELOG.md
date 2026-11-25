@@ -1,3 +1,12 @@
+## 0.29.0
+
+**places** narrowed to "you are here" only (breaking for 0.28.0 users;
+only Fresh Pot's unreleased branch used it). Removed `PinnedPlaces`,
+`PlaceVisits` (apps own their place tables) and `recallAtPlace` /
+`PlaceRecall` / `VisitWithItems` (recall is app-specific). Kept
+`matchPlacesHere`, `PlaceMatch*`, `PlacePolicy`, `pinUpdateFor`,
+`checkPinFields`.
+
 ## 0.28.0
 
 New **places** module, additive: saved places + visits + the

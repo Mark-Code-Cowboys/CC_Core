@@ -39,7 +39,7 @@ own barrel file, re-exported by `lib/cc_core.dart`.
 | `web/` | One user-initiated page fetch (timeout, byte cap, typed failures) and schema.org JSON-LD extraction |
 | `on_device_ai/` | The phone's own language model behind one seam (Gemini Nano / Apple Foundation Models), plus the line-labeling pattern for sorting OCR text without inventing any |
 | `geo/` | Pin-based place matching: haversine distance, candidates within a radius, pin refinement rules, `LocationSource` seam + fake. Pure Dart, no policy defaults |
-| `places/` | Saved places + visits on top of `geo/`: drift base tables apps subclass (`PinnedPlaces`, `PlaceVisits`), one-fix `matchPlacesHere<P>`, `pinUpdateFor`, `checkPinFields`, "what did I have here last time" `recallAtPlace<I>`. Additive; no plugin, no network |
+| `places/` | "You are here" on top of `geo/`: one-fix `matchPlacesHere<P>` over the app's places, `pinUpdateFor`, `checkPinFields`, `PlacePolicy`. Apps own their place tables. No plugin, no network |
 
 ## Module guides
 
@@ -124,24 +124,17 @@ if (result case LocationFixResult(:final fix)) {
 
 ### places
 
-Saved places, visits to them, and the start-of-visit flow, generic
-over each app's own place and item types. Built on `geo`; additive —
-an app with its own place tables (Table Encore) needn't adopt it.
+The "you are here" start of a visit, generic over the app's own place
+type. Built on `geo`; apps own their place tables and everything after
+the match.
 
-- `PinnedPlaces` — drift base table: id, name, optional pin (lat, lng,
-  accuracy, capture time) with CHECKs that keep a pin whole. Subclass
-  it and add columns; constraints are inherited.
-- `PlaceVisits` — drift base table: id, placeId, visitedAt,
-  journalEntryId. The subclass supplies the foreign keys (core can't
-  know the place table's name).
 - `matchPlacesHere<P>(source:, policy:, places:, pinOf:)` — one
   foreground fix, then the places in range: `PlaceMatchFound` (fix +
   candidates, maybe none) or `PlaceMatchNoFix` (why).
 - `pinUpdateFor(stored:, fix:, policy:)` — the pin a confirmed on-site
   visit leaves behind, or null.
-- `checkPinFields(...)` — the CHECKs' Dart side, readable errors.
-- `recallAtPlace<I>(visits, keyOf:)` — last visit's items and "the
-  usual" (had on more than one visit).
+- `checkPinFields(...)` — readable errors for half a pin (mirror it
+  with CHECK constraints in the app's table).
 - `PlacePolicy` — radius, refine threshold, max fix age. No defaults.
 
 ### io — cloud backup

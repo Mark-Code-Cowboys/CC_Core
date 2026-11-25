@@ -1,8 +1,6 @@
 import 'package:cc_core/cc_core.dart';
-import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:flutter_test/flutter_test.dart';
 
-import 'places_test_db.dart';
 
 const _policy = PlacePolicy(
   matchRadiusM: 75,
@@ -20,70 +18,6 @@ const _baseLat = 45.0;
 const _baseLng = -122.0;
 
 void main() {
-  group('PinnedPlaces / PlaceVisits as an app subclasses them', () {
-    late PlacesTestDb db;
-    setUp(() => db = PlacesTestDb());
-    tearDown(() => db.close());
-
-    Future<int> venue({
-      double? lat,
-      double? lng,
-      double? accuracyM,
-      DateTime? capturedAt,
-    }) => db
-        .into(db.testVenues)
-        .insert(
-          TestVenuesCompanion.insert(
-            name: 'Heart',
-            kind: TestVenueKind.cafe,
-            lat: Value(lat),
-            lng: Value(lng),
-            pinAccuracyM: Value(accuracyM),
-            pinCapturedAt: Value(capturedAt),
-          ),
-        );
-
-    test('a whole pin, or none, is stored', () async {
-      await venue();
-      await venue(lat: _baseLat, lng: _baseLng);
-      await venue(
-        lat: _baseLat,
-        lng: _baseLng,
-        accuracyM: 8,
-        capturedAt: _now,
-      );
-      expect(await db.select(db.testVenues).get(), hasLength(3));
-    });
-
-    test('the inherited CHECKs refuse half a pin', () async {
-      await expectLater(venue(lat: _baseLat), throwsA(anything));
-      await expectLater(
-        venue(lat: _baseLat, lng: _baseLng, accuracyM: 8),
-        throwsA(anything),
-      );
-      await expectLater(
-        venue(accuracyM: 8, capturedAt: _now),
-        throwsA(anything),
-      );
-      expect(await db.select(db.testVenues).get(), isEmpty);
-    });
-
-    test("the app's own FK cascades visits with their place", () async {
-      final id = await venue();
-      await db
-          .into(db.testVisits)
-          .insert(TestVisitsCompanion.insert(placeId: id, visitedAt: _now));
-      await expectLater(
-        db
-            .into(db.testVisits)
-            .insert(TestVisitsCompanion.insert(placeId: 999, visitedAt: _now)),
-        throwsA(anything),
-      );
-      await (db.delete(db.testVenues)..where((v) => v.id.equals(id))).go();
-      expect(await db.select(db.testVisits).get(), isEmpty);
-    });
-  });
-
   group('checkPinFields', () {
     test('accepts whole pins and no pin', () {
       checkPinFields(lat: null, lng: null);
@@ -209,47 +143,6 @@ void main() {
         pinUpdateFor(stored: null, fix: null, policy: _policy),
         isNull,
       );
-    });
-  });
-
-  group('recallAtPlace', () {
-    VisitWithItems<String> visit(int day, List<String> items) =>
-        VisitWithItems(visitedAt: DateTime(2026, 11, day), items: items);
-
-    test('last time is the latest visit that recorded something', () {
-      final recall = recallAtPlace(
-        [
-          visit(1, ['Cortado']),
-          visit(9, []),
-          visit(5, ['Flat white', 'Croissant']),
-        ],
-        keyOf: (s) => s.toLowerCase(),
-      );
-      expect(recall.lastVisitAt, DateTime(2026, 11, 5));
-      expect(recall.lastItems, ['Flat white', 'Croissant']);
-      expect(recall.visitCount, 3);
-    });
-
-    test('the usual: had on more than one visit, most visits first', () {
-      final recall = recallAtPlace(
-        [
-          visit(1, ['cortado', 'Pour over']),
-          visit(2, ['Cortado', 'Cortado']), // twice in one visit counts once
-          visit(3, ['Pour Over ', 'Cortado']),
-          visit(4, ['Matcha']),
-        ],
-        keyOf: (s) => s.trim().toLowerCase(),
-      );
-      // The latest spelling represents each.
-      expect(recall.usual, ['Cortado', 'Pour Over ']);
-    });
-
-    test('nothing recorded: empty', () {
-      final recall = recallAtPlace([visit(1, [])], keyOf: (s) => s);
-      expect(recall.isEmpty, isTrue);
-      expect(recall.lastVisitAt, isNull);
-      expect(recall.usual, isEmpty);
-      expect(recall.visitCount, 1);
     });
   });
 }

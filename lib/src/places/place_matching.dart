@@ -1,6 +1,4 @@
 import '../geo/geo.dart';
-// ignore: unused_import, for doc references.
-import 'place_tables.dart';
 
 /// An app's place-matching numbers. Core has no defaults: each app
 /// decides how close is "here" (Table Encore: 75 m), how good a fix
@@ -100,9 +98,10 @@ GeoPin? pinUpdateFor({
   return refine ? GeoPin.fromFix(fix) : null;
 }
 
-/// The Dart side of [PinnedPlaces]' CHECK constraints, so a bad write
-/// fails with a readable error instead of a SQL one: lat and lng
-/// together; accuracy and capture time together, and only with a pin.
+/// Pin rules for an app's place rows, so a bad write fails with a
+/// readable error instead of a SQL one: lat and lng together; accuracy
+/// and capture time together, and only with a pin. Apps that store
+/// pins should enforce the same with CHECK constraints.
 void checkPinFields({
   required double? lat,
   required double? lng,
