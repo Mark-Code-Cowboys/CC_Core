@@ -78,4 +78,47 @@ void main() {
     // Drain the snackbar timer before teardown.
     await tester.pump(const Duration(seconds: 5));
   });
+
+  testWidgets('a failed import says so and leaves Import tappable again',
+      (tester) async {
+    var calls = 0;
+    const doc = CsvDocument(header: ['Name'], rows: [
+      ['KOA Butte'],
+    ]);
+    await tester.pumpWidget(MaterialApp(
+      home: Builder(
+        builder: (context) => Scaffold(
+          body: Center(
+            child: TextButton(
+              onPressed: () => showCsvMappingScreen(
+                context,
+                doc: doc,
+                fields: _fields,
+                title: 'Import spreadsheet',
+                footnote: 'Fine print.',
+                onImport: (m) async {
+                  calls++;
+                  throw StateError('disk full');
+                },
+              ),
+              child: const Text('open'),
+            ),
+          ),
+        ),
+      ),
+    ));
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+
+    final button = find.widgetWithText(FilledButton, 'Import');
+    await tester.ensureVisible(button);
+    await tester.tap(button);
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(find.textContaining('Import failed'), findsOneWidget);
+    // Still on the mapping screen, button live again.
+    expect(tester.widget<FilledButton>(button).onPressed, isNotNull);
+    expect(calls, 1);
+    await tester.pump(const Duration(seconds: 5));
+  });
 }

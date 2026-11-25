@@ -1,3 +1,23 @@
+## 0.27.1
+
+Fixes found while edge-testing Fresh Pot on a Pixel emulator.
+
+* trends: `SimpleLineChart` puts high and low on the left edge (high at
+  the top, low at the bottom) instead of max top-left and min
+  top-right, which read like two maximums. New `valueLabel` formatter
+  for units (`$34.50`); the default drops `.0`. Dates default to
+  "Feb 2026" instead of "2/26", which read as February 26th. A flat
+  line shows its value once.
+* text: `parseLooseDate(text, dayFirst: true)` for European
+  spreadsheets, plus `numericDatesLookDayFirst(cells)` to decide per
+  column. Default behavior unchanged.
+* io: `runRestoreFlow` reports Errors as well as Exceptions. A backup row
+  an app can't read (a `TypeError` or `ArgumentError`) used to fail
+  silently.
+* io: `CsvMappingScreen` catches a failing `onImport`: shows "Import
+  failed", stays on the screen and re-enables Import. It used to spin
+  forever.
+
 ## 0.27.0
 
 New **suite_link** module: Code Cowboys apps hand entries to Kick Rocks

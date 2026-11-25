@@ -23,4 +23,27 @@ void main() {
     expect(parseLooseDate('no date here'), isNull);
     expect(parseLooseDate('2/30/2026'), isNull); // rollover rejected
   });
+
+  test('dayFirst reads European numeric dates; ISO and words unaffected',
+      () {
+    expect(parseLooseDate('03/04/2026'), DateTime(2026, 3, 4));
+    expect(parseLooseDate('03/04/2026', dayFirst: true), DateTime(2026, 4, 3));
+    expect(parseLooseDate('25.03.2026', dayFirst: true), DateTime(2026, 3, 25));
+    // A first number that can't be a day... can still be a month.
+    expect(parseLooseDate('03/25/2026', dayFirst: true), DateTime(2026, 3, 25));
+    expect(parseLooseDate('2026-04-03', dayFirst: true), DateTime(2026, 4, 3));
+    expect(parseLooseDate('June 15, 2026', dayFirst: true),
+        DateTime(2026, 6, 15));
+  });
+
+  test('numericDatesLookDayFirst decides per column', () {
+    expect(numericDatesLookDayFirst(['03/04/2026', '25/03/2026']), isTrue);
+    expect(numericDatesLookDayFirst(['03/04/2026', '03/25/2026']), isFalse);
+    // Ambiguous throughout: month-first, like parseLooseDate.
+    expect(numericDatesLookDayFirst(['03/04/2026', '05/06/2026']), isFalse);
+    // Contradictory column: month-first wins (never flips a US file).
+    expect(numericDatesLookDayFirst(['25/03/2026', '03/25/2026']), isFalse);
+    expect(numericDatesLookDayFirst(['2026-03-25', 'n/a']), isFalse);
+  });
 }
+

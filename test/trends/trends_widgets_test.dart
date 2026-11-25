@@ -43,10 +43,43 @@ void main() {
       (DateTime(2025, 7), 84),
       (DateTime(2026, 6), 88),
     ])));
-    expect(find.text('92'), findsOneWidget); // max
-    expect(find.text('84'), findsOneWidget); // min
-    expect(find.text('5/24'), findsOneWidget);
-    expect(find.text('6/26'), findsOneWidget);
+    // High above low, both on the left edge — not two top corners.
+    final high = tester.getCenter(find.text('92'));
+    final low = tester.getCenter(find.text('84'));
+    expect(high.dy, lessThan(low.dy));
+    expect(high.dx, closeTo(low.dx, 20));
+    // Month names: "5/24" read as May 24th.
+    expect(find.text('May 2024'), findsOneWidget);
+    expect(find.text('Jun 2026'), findsOneWidget);
+  });
+
+  testWidgets('SimpleLineChart takes a value formatter; whole numbers '
+      'drop the .0', (tester) async {
+    await tester.pumpWidget(host(SimpleLineChart(points: [
+      (DateTime(2026, 2), 14.0),
+      (DateTime(2026, 8), 34.0),
+    ])));
+    expect(find.text('34'), findsOneWidget);
+    expect(find.text('14'), findsOneWidget);
+
+    await tester.pumpWidget(host(SimpleLineChart(
+      points: [
+        (DateTime(2026, 2), 14.0),
+        (DateTime(2026, 8), 34.5),
+      ],
+      valueLabel: (v) => '\$${v.toStringAsFixed(2)}',
+    )));
+    expect(find.text(r'$34.50'), findsOneWidget);
+    expect(find.text(r'$14.00'), findsOneWidget);
+  });
+
+  testWidgets('SimpleLineChart with a flat line shows the value once',
+      (tester) async {
+    await tester.pumpWidget(host(SimpleLineChart(points: [
+      (DateTime(2026, 2), 18),
+      (DateTime(2026, 8), 18),
+    ])));
+    expect(find.text('18'), findsOneWidget);
   });
 
   testWidgets('RegionTileGrid draws all 50 states and fills played ones',

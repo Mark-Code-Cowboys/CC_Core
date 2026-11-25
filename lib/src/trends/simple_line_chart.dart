@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
 
 /// One value over time as a plain polyline with dots — no grid, no
-/// legend, no axes to pretend at precision. First/last dates and the
-/// value range label the corners.
+/// legend, no axes to pretend at precision. The value range labels the
+/// left edge (high at the top, low at the bottom, where the line
+/// actually reaches them); first/last dates label the bottom corners.
 class SimpleLineChart extends StatelessWidget {
   /// Creates the chart from time-ordered points.
   const SimpleLineChart({
     super.key,
     required this.points,
     this.height = 120,
-    this.dateLabel = _defaultDateLabel,
+    this.dateLabel = defaultDateLabel,
+    this.valueLabel = defaultValueLabel,
   });
 
   /// The series; fewer than two points renders nothing (gate upstream
@@ -22,13 +24,28 @@ class SimpleLineChart extends StatelessWidget {
   /// Formats the corner date labels.
   final String Function(DateTime) dateLabel;
 
-  static String _defaultDateLabel(DateTime d) =>
-      '${d.month}/${d.year % 100}';
+  /// Formats the high/low value labels — pass one for units
+  /// (`(v) => '\$${v.toStringAsFixed(2)}'`).
+  final String Function(num) valueLabel;
+
+  static const _months = [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+  ];
+
+  /// "Feb 2026": "2/26" read as February 26th.
+  static String defaultDateLabel(DateTime d) =>
+      '${_months[d.month - 1]} ${d.year}';
+
+  /// Whole numbers bare ("92", not "92.0"), else one decimal.
+  static String defaultValueLabel(num v) =>
+      v == v.roundToDouble() ? v.round().toString() : v.toStringAsFixed(1);
 
   @override
   Widget build(BuildContext context) {
     if (points.length < 2) return const SizedBox.shrink();
     final theme = Theme.of(context);
+    final style = theme.textTheme.bodySmall;
     final sorted = [...points]..sort((a, b) => a.$1.compareTo(b.$1));
     final values = sorted.map((p) => p.$2);
     final min = values.reduce((a, b) => a < b ? a : b);
@@ -36,29 +53,41 @@ class SimpleLineChart extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text('$max', style: theme.textTheme.bodySmall),
-            Text('$min', style: theme.textTheme.bodySmall),
-          ],
-        ),
         SizedBox(
           height: height,
-          child: CustomPaint(
-            painter: _LinePainter(
-              sorted,
-              color: theme.colorScheme.primary,
-              min: min.toDouble(),
-              max: max.toDouble(),
-            ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                mainAxisAlignment: max == min
+                    ? MainAxisAlignment.center
+                    : MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(valueLabel(max), style: style),
+                  if (max != min) Text(valueLabel(min), style: style),
+                ],
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: CustomPaint(
+                  painter: _LinePainter(
+                    sorted,
+                    color: theme.colorScheme.primary,
+                    min: min.toDouble(),
+                    max: max.toDouble(),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
+        const SizedBox(height: 4),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(dateLabel(sorted.first.$1), style: theme.textTheme.bodySmall),
-            Text(dateLabel(sorted.last.$1), style: theme.textTheme.bodySmall),
+            Text(dateLabel(sorted.first.$1), style: style),
+            Text(dateLabel(sorted.last.$1), style: style),
           ],
         ),
       ],

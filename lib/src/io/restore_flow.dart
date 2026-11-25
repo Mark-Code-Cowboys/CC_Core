@@ -53,7 +53,10 @@ Future<void> runRestoreFlow(
         .showSnackBar(const SnackBar(content: Text('Backup restored.')));
   } on InvalidBackupException catch (e) {
     messenger.showSnackBar(SnackBar(content: Text(e.message)));
-  } on Exception catch (e) {
+  } on Object catch (e) {
+    // Not just Exceptions: a backup row the app can't read surfaces as
+    // a TypeError/ArgumentError, and "nothing happened" is worse than
+    // any message.
     messenger.showSnackBar(SnackBar(content: Text('Restore failed: $e')));
   }
 }

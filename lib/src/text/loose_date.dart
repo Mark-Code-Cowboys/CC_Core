@@ -27,7 +27,11 @@ final _writtenDate = RegExp(
 /// day-first rescue when the first number can't be a month). Null when
 /// nothing parseable is found — callers never invent a date. Extracted
 /// from Course Ledger when Hitch Post became its second consumer.
-DateTime? parseLooseDate(String text) {
+///
+/// [dayFirst] reads numeric forms as day/month ("03/04/2026" is 3 April),
+/// for European spreadsheets; decide it per column with
+/// [numericDatesLookDayFirst] rather than per cell.
+DateTime? parseLooseDate(String text, {bool dayFirst = false}) {
   final iso = _isoDate.firstMatch(text);
   if (iso != null) {
     return _validDate(
@@ -55,10 +59,30 @@ DateTime? parseLooseDate(String text) {
     var b = int.parse(numeric.group(2)!);
     var year = int.parse(numeric.group(3)!);
     if (year < 100) year += year >= 70 ? 1900 : 2000;
-    if (a > 12 && b <= 12) (a, b) = (b, a); // day-first rescue
+    if (dayFirst) (a, b) = (b, a);
+    // Rescue when the first number can't be a month.
+    if (a > 12 && b <= 12) (a, b) = (b, a);
     return _validDate(year, a, b);
   }
   return null;
+}
+
+/// Whether a column of numeric dates is written day-first: true when
+/// some cell's first number can only be a day ("25/03/2026") and none
+/// can only be month-first ("03/25/2026"). Ambiguous columns (every
+/// number 12 or under) stay month-first, matching [parseLooseDate].
+bool numericDatesLookDayFirst(Iterable<String> cells) {
+  var dayFirst = false;
+  for (final cell in cells) {
+    if (_isoDate.hasMatch(cell)) continue;
+    final m = _numericDate.firstMatch(cell);
+    if (m == null) continue;
+    final a = int.parse(m.group(1)!);
+    final b = int.parse(m.group(2)!);
+    if (a <= 12 && b > 12) return false;
+    if (a > 12 && b <= 12) dayFirst = true;
+  }
+  return dayFirst;
 }
 
 /// Every date printed in [text], in print order — notebook pages and

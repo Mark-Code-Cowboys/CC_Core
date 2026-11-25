@@ -118,7 +118,16 @@ class _CsvMappingScreenState extends State<CsvMappingScreen> {
     if (_importing) return;
     setState(() => _importing = true);
     final messenger = ScaffoldMessenger.of(context);
-    final summary = await widget.onImport(Map.unmodifiable(_mapping));
+    final String summary;
+    try {
+      summary = await widget.onImport(Map.unmodifiable(_mapping));
+    } on Object catch (e) {
+      // A failed import used to leave the button spinning forever with
+      // no word why; stay on the screen so the mapping can be fixed.
+      messenger.showSnackBar(SnackBar(content: Text('Import failed: $e')));
+      if (mounted) setState(() => _importing = false);
+      return;
+    }
     messenger.showSnackBar(SnackBar(content: Text(summary)));
     if (mounted) Navigator.of(context).pop();
   }

@@ -105,4 +105,19 @@ void main() {
     expect(find.text('Unrecognized export format'), findsOneWidget);
     await tester.pump(const Duration(seconds: 5));
   });
+
+  testWidgets('an Error from the app (not an Exception) is still reported',
+      (tester) async {
+    await tester.pumpWidget(host(
+      restore: (_) async => throw ArgumentError('No enum value teleporter'),
+      store: _RecordingPhotoService(),
+    ));
+    await tester.tap(find.text('go'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Restore'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Restore failed'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await tester.pump(const Duration(seconds: 5));
+  });
 }
