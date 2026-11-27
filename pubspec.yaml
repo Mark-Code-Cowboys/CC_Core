@@ -1,6 +1,6 @@
 name: cc_core
 description: "Shared core library for Code Cowboys apps — privacy-first, local-only journal/log building blocks."
-version: 0.30.0
+version: 0.31.0
 repository: https://github.com/Mark-Code-Cowboys/cc_core
 publish_to: none
 
@@ -62,6 +62,8 @@ flutter:
     platforms:
       android:
         package: com.codecowboys.cc_core
+        pluginClass: CcCorePlugin
+      ios:
         pluginClass: CcCorePlugin
 
   # To add assets to your package, add an assets section, like this:

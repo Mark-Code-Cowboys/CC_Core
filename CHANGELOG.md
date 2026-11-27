@@ -1,3 +1,19 @@
+## 0.31.0
+
+**suite_link on iOS.** Same channel and Dart API; the plugin now has an
+iOS half (CocoaPods + Swift Package Manager).
+
+* Quiet feed: the envelope is written to the App Group container
+  `group.com.codecowboys.suite`, `suite_inbox/q__<bundle id>__<ms>-<n>.json`
+  (written whole, then renamed). Only same-team apps can join the group.
+* "Send to Kick Rocks": opens `kickrocks://suite/moment?e=<base64url>`.
+* Drafts ("Log this in…"): `<scheme>://suite/draft?e=<base64url>`; a sender
+  iOS names (same team only) must be Kick Rocks.
+* Back-links: `<scheme>://open/<id>` via the scene delegate.
+* Apps add: CFBundleURLTypes (own scheme), LSApplicationQueriesSchemes
+  (`kickrocks`; Kick Rocks lists the siblings), FlutterDeepLinkingEnabled
+  false, and the App Group entitlement.
+
 ## 0.30.0
 
 **suite_link** works both ways: siblings can now take Kick Rocks'

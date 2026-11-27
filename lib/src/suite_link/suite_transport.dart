@@ -1,8 +1,10 @@
 import 'package:flutter/services.dart';
 
-/// How an envelope leaves the app. Android: cc_core's plugin
-/// (android/.../CcCorePlugin.kt). Elsewhere (iOS until its App Group
-/// pass, tests) calls answer null.
+/// How an envelope leaves the app: cc_core's plugin. Android
+/// (android/.../CcCorePlugin.kt): content-provider inbox + ACTION_SEND.
+/// iOS (ios/cc_core/.../CcCorePlugin.swift): App Group inbox
+/// (group.com.codecowboys.suite) + same-team `<scheme>://suite/...` URLs.
+/// Elsewhere (tests) calls answer null.
 abstract class SuiteTransport {
   /// Quiet: files [text] in the first installed package's inbox. Returns
   /// that package, or null when none took it.
