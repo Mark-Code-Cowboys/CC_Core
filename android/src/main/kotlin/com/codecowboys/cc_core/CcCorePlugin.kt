@@ -188,9 +188,11 @@ class CcCorePlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAwa
         return null
     }
 
+    /// Installed and enabled: a disabled app is still "installed" to the
+    /// package manager but can't take an entry, so it counts as absent
+    /// (no Send button, no quiet feed).
     private fun isInstalled(pkg: String): Boolean = try {
-        context.packageManager.getPackageInfo(pkg, 0)
-        true
+        context.packageManager.getApplicationInfo(pkg, 0).enabled
     } catch (e: PackageManager.NameNotFoundException) {
         false
     }
