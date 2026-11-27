@@ -260,14 +260,20 @@ void main() {
       final at = DateTime.utc(2026, 11, 24, 17, 30);
       final id = await f.fromDraft(d, () async {
         // Fire-and-forget, as the apps' repositories do.
-        unawaited(f.feed(f.moment(entityId: 'visit-3', time: at, title: 'Taqueria')));
+        // Repositories feed unawaited, after reading the row back.
+        await Future<void>.delayed(Duration.zero);
+        unawaited(() async {
+          await Future<void>.delayed(Duration.zero);
+          await f.feed(f.moment(entityId: 'visit-3', time: at, title: 'Taqueria'));
+        }());
         return 3;
       });
       expect(id, 3);
       await f.feed(f.moment(entityId: 'visit-4', time: at, title: 'Other'));
       await pumpEventQueue();
-      final first = SuiteMoment.decode(t.delivered[0]);
-      final second = SuiteMoment.decode(t.delivered[1]);
+      final got = t.delivered.map(SuiteMoment.decode).toList();
+      final first = got.singleWhere((m) => m.entityId.startsWith('visit-3~'));
+      final second = got.singleWhere((m) => m.entityId.startsWith('visit-4~'));
       expect(first.fromMoment, 'mom-9');
       expect(second.fromMoment, isNull);
     });

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 
@@ -124,8 +125,6 @@ class SuiteFeed {
     );
   }
 
-  SuiteDraft? _saving;
-
   /// Calls [onDraft] for each "Log this in …" from Kick Rocks: the one
   /// the app was opened with, then any that arrive later. Anything that
   /// isn't a well-formed Kick Rocks envelope is ignored. Call once, where
@@ -142,20 +141,20 @@ class SuiteFeed {
   }
 
   /// Runs [save] (the app's normal save of the entry pre-filled from
-  /// [draft]); a [feed] or [send] started while it runs says the entry
-  /// came from [draft]'s Kick Rocks moment.
-  Future<T> fromDraft<T>(SuiteDraft draft, Future<T> Function() save) async {
-    _saving = draft;
-    try {
-      return await save();
-    } finally {
-      if (identical(_saving, draft)) _saving = null;
-    }
-  }
+  /// [draft]); any [feed] or [send] started inside it, even after an
+  /// await or unawaited, says the entry came from [draft]'s Kick Rocks
+  /// moment. (A zone value: it follows the save's own async work and
+  /// nothing else.)
+  Future<T> fromDraft<T>(SuiteDraft draft, Future<T> Function() save) =>
+      runZoned(save, zoneValues: {_draftKey: draft});
+
+  static final _draftKey = Object();
+
+  static String? get _draftMoment => (Zone.current[_draftKey] as SuiteDraft?)?.momentId;
 
   /// Quiet handoff after a save. True when Kick Rocks took it.
   Future<bool> feed(SuiteMoment m) async {
-    final from = _saving?.momentId; // before any await: the save's own feed
+    final from = _draftMoment;
     try {
       if (!await autoSend()) return false;
       final text = await _wire(m, fromMoment: from);
@@ -170,7 +169,7 @@ class SuiteFeed {
   /// installed (or is too old to take entries). A second tap on the same
   /// entry within two seconds is ignored (reported as sent).
   Future<bool> send(SuiteMoment m) async {
-    final from = _saving?.momentId;
+    final from = _draftMoment;
     try {
       final now = _now();
       final last = _lastSend[m.entityId];

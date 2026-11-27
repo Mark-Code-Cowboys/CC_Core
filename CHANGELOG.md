@@ -8,7 +8,7 @@ listen).
   id, time/dateOnly, note, trip name, optional pin). Only well-formed
   `kick_rocks` envelopes; on Android 14+ a share naming any other sender
   is dropped natively. A draft only pre-fills; nothing is saved.
-* `SuiteFeed.fromDraft(draft, save)`: a `feed`/`send` started during the
+* `SuiteFeed.fromDraft(draft, save)` (a zone value): any `feed`/`send` started inside the
   save carries `fromMoment`, so Kick Rocks links its own moment to the
   new entry instead of adding a second one.
 * Envelope v1 gains optional `fromMoment` (entityId shape; older readers
