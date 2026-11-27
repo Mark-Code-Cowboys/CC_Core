@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:cc_core/cc_core.dart';
@@ -212,6 +213,70 @@ void main() {
       await Future<void>.delayed(Duration.zero);
       expect(opened, ['visit-1']);
       expect(missing, ['visit-2', 'visit-3', 'visit-1']);
+    });
+  });
+
+  group('drafts from Kick Rocks', () {
+    String krEnv(Map<String, Object?> over) => env({
+          'sourceApp': 'kick_rocks',
+          'entityId': 'mom-9',
+          'title': 'Best tacos of the trip',
+          'summary': 'Lake Michigan loop',
+          'lat': 45.85,
+          'lng': -84.62,
+          ...over,
+        });
+
+    test('launch draft and later drafts reach the handler', () async {
+      final t = kr()..launchDraft = krEnv({});
+      final got = <SuiteDraft>[];
+      await make(t).listenForDrafts(got.add);
+      expect(got.single.momentId, 'mom-9');
+      expect(got.single.note, 'Best tacos of the trip');
+      expect(got.single.tripName, 'Lake Michigan loop');
+      expect(got.single.hasPin, isTrue);
+      expect(got.single.time, DateTime.utc(2026, 11, 24, 17, 30).toLocal());
+      t.draftHandler!(krEnv({'entityId': 'mom-10', 'title': SuiteDraft.untitled, 'lat': #drop, 'lng': #drop}));
+      expect(got.last.momentId, 'mom-10');
+      expect(got.last.note, isNull);
+      expect(got.last.hasPin, isFalse);
+    });
+
+    test('only Kick Rocks envelopes, only well-formed ones', () async {
+      final t = kr();
+      final got = <SuiteDraft>[];
+      await make(t).listenForDrafts(got.add);
+      t.draftHandler!(env({})); // a sibling's envelope, not Kick Rocks
+      t.draftHandler!('not json');
+      t.draftHandler!(krEnv({'lat': 200}));
+      t.draftHandler!(krEnv({'fromMoment': 'bad id!'}));
+      expect(got, isEmpty);
+    });
+
+    test('a save inside fromDraft feeds with fromMoment; outside it does not', () async {
+      final t = kr();
+      final f = make(t);
+      final d = SuiteDraft.tryParse(krEnv({}))!;
+      final at = DateTime.utc(2026, 11, 24, 17, 30);
+      final id = await f.fromDraft(d, () async {
+        // Fire-and-forget, as the apps' repositories do.
+        unawaited(f.feed(f.moment(entityId: 'visit-3', time: at, title: 'Taqueria')));
+        return 3;
+      });
+      expect(id, 3);
+      await f.feed(f.moment(entityId: 'visit-4', time: at, title: 'Other'));
+      await pumpEventQueue();
+      final first = SuiteMoment.decode(t.delivered[0]);
+      final second = SuiteMoment.decode(t.delivered[1]);
+      expect(first.fromMoment, 'mom-9');
+      expect(second.fromMoment, isNull);
+    });
+
+    test('fromMoment survives a round trip and is optional', () {
+      final m = SuiteMoment.decode(env({'fromMoment': 'mom-9'}));
+      expect(m.fromMoment, 'mom-9');
+      expect(SuiteMoment.decode(m.encode()).fromMoment, 'mom-9');
+      expect(SuiteMoment.decode(env({})).fromMoment, isNull);
     });
   });
 }

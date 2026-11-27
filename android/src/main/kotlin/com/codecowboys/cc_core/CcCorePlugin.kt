@@ -33,12 +33,18 @@ import java.util.concurrent.Executors
 ///   kept until Dart reads it with `initialOpen`; an `open` call nudges a
 ///   running app. A link stays put while nobody listens (onboarding), and
 ///   one already read is never read again (Recents, recreation).
+/// - Drafts: Kick Rocks' "Log this in…" (ACTION_SEND, suite MIME, into
+///   the app's main activity) is kept the same way until Dart reads it
+///   with `initialDraft`; a `draft` call nudges a running app. On
+///   Android 14+ a share that says it's from anyone but Kick Rocks is
+///   dropped. It only pre-fills a form the user still has to save.
 class CcCorePlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAware,
     PluginRegistry.NewIntentListener {
     private lateinit var channel: MethodChannel
     private lateinit var context: Context
     private var activity: ActivityPluginBinding? = null
     private var pendingOpen: String? = null
+    private var pendingDraft: String? = null
     private val io = Executors.newSingleThreadExecutor()
     private val main = Handler(Looper.getMainLooper())
 
@@ -69,6 +75,10 @@ class CcCorePlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAwa
                 result.success(pendingOpen)
                 pendingOpen = null
             }
+            "initialDraft" -> {
+                result.success(pendingDraft)
+                pendingDraft = null
+            }
             else -> result.notImplemented()
         }
     }
@@ -77,6 +87,7 @@ class CcCorePlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAwa
         activity = binding
         binding.addOnNewIntentListener(this)
         takeLink(binding.activity.intent)?.let { pendingOpen = it }
+        takeDraft(binding.activity.intent)?.let { pendingDraft = it }
     }
 
     override fun onDetachedFromActivityForConfigChanges() = onDetachedFromActivity()
@@ -92,10 +103,35 @@ class CcCorePlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAwa
     }
 
     override fun onNewIntent(intent: Intent): Boolean {
-        val link = takeLink(intent) ?: return false
-        pendingOpen = link
-        channel.invokeMethod("open", null)
+        takeLink(intent)?.let {
+            pendingOpen = it
+            channel.invokeMethod("open", null)
+        }
+        takeDraft(intent)?.let {
+            pendingDraft = it
+            channel.invokeMethod("draft", null)
+        }
         return false // let the app see the intent too
+    }
+
+    /// A Kick Rocks envelope from ACTION_SEND, once (same replay rules as
+    /// [takeLink]). Android 14+ names the sender when it opted in (Kick
+    /// Rocks does); a named sender that isn't Kick Rocks is refused.
+    private fun takeDraft(intent: Intent?): String? {
+        if (intent?.action != Intent.ACTION_SEND || intent.type != SUITE_MIME) return null
+        if (intent.flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY != 0) return null
+        if (intent.getBooleanExtra(SEEN, false)) return null
+        intent.putExtra(SEEN, true)
+        val text = intent.getStringExtra(Intent.EXTRA_TEXT) ?: return null
+        if (text.length > 65536) return null
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            val from = activity?.activity?.launchedFromPackage
+            if (from != null && from !in KICK_ROCKS) {
+                Log.i(TAG, "suite draft from $from refused")
+                return null
+            }
+        }
+        return text
     }
 
     /// `<scheme>://open/<id>` from a VIEW intent, once. Relaunches from
@@ -163,5 +199,6 @@ class CcCorePlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAwa
         const val TAG = "SuiteLink"
         const val SUITE_MIME = "application/vnd.codecowboys.moment+json"
         const val SEEN = "cc_core.suite_link.seen"
+        val KICK_ROCKS = setOf("com.codecowboys.kickrocks", "com.codecowboys.kickrocks.dev")
     }
 }

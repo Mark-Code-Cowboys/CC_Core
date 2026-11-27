@@ -22,6 +22,14 @@ abstract class SuiteTransport {
   /// Back-links that arrive while the app is running. One that arrives
   /// before a handler is set waits for [initialOpen].
   void onOpen(void Function(String link) handler);
+
+  /// The Kick Rocks envelope ("Log this in…") the app was handed, once;
+  /// null after that or when there wasn't one.
+  Future<String?> initialDraft();
+
+  /// Drafts that arrive while the app is running. One that arrives
+  /// before a handler is set waits for [initialDraft].
+  void onDraft(void Function(String envelope) handler);
 }
 
 /// The real transport (cc_core's Android plugin).
@@ -57,15 +65,38 @@ class MethodChannelSuiteTransport implements SuiteTransport {
   Future<String?> initialOpen() => _call('initialOpen', const {});
 
   @override
-  void onOpen(void Function(String link) handler) {
-    // The plugin keeps the newest link until it's read, so a link that
-    // arrived while no handler was listening isn't lost; "open" is just
-    // the nudge to read it.
+  Future<String?> initialDraft() => _call('initialDraft', const {});
+
+  // One channel handler serves both nudges (setting a second would drop
+  // the first), so the handlers are kept here.
+  static void Function(String)? _onOpen;
+  static void Function(String)? _onDraft;
+
+  static void _listen() {
+    // The plugin keeps the newest link/draft until it's read, so one that
+    // arrived while no handler was listening isn't lost; "open" and
+    // "draft" are just the nudges to read them.
     _ch.setMethodCallHandler((call) async {
-      if (call.method != 'open') return;
-      final link = await initialOpen();
-      if (link != null) handler(link);
+      if (call.method == 'open' && _onOpen != null) {
+        final link = await const MethodChannelSuiteTransport().initialOpen();
+        if (link != null) _onOpen?.call(link);
+      } else if (call.method == 'draft' && _onDraft != null) {
+        final d = await const MethodChannelSuiteTransport().initialDraft();
+        if (d != null) _onDraft?.call(d);
+      }
     });
+  }
+
+  @override
+  void onOpen(void Function(String link) handler) {
+    _onOpen = handler;
+    _listen();
+  }
+
+  @override
+  void onDraft(void Function(String envelope) handler) {
+    _onDraft = handler;
+    _listen();
   }
 }
 
@@ -126,4 +157,20 @@ class FakeSuiteTransport implements SuiteTransport {
 
   @override
   void onOpen(void Function(String link) handler) => openHandler = handler;
+
+  /// What [initialDraft] answers (once).
+  String? launchDraft;
+
+  /// The handler [onDraft] registered; call it to simulate a draft.
+  void Function(String envelope)? draftHandler;
+
+  @override
+  Future<String?> initialDraft() async {
+    final d = launchDraft;
+    launchDraft = null;
+    return d;
+  }
+
+  @override
+  void onDraft(void Function(String envelope) handler) => draftHandler = handler;
 }

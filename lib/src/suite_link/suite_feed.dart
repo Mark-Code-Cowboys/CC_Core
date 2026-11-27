@@ -15,6 +15,10 @@ import 'suite_transport.dart';
 /// - [send] from a "Send to Kick Rocks" button: opens Kick Rocks with
 ///   the entry, whatever the setting.
 /// - [listenForOpens] for Kick Rocks' "Open in ..." back-links.
+/// - [listenForDrafts] for Kick Rocks' "Log this in …": it hands over a
+///   moment (time, note, pin) for the app to pre-fill a new entry with.
+///   Save that entry inside [fromDraft] and Kick Rocks links its moment
+///   to the entry instead of adding a second one.
 ///
 /// Entity ids go out namespaced by install (`visit-12~k3f9qa`): after a
 /// reinstall the app's ids start over at 1, and without this a new
@@ -120,11 +124,41 @@ class SuiteFeed {
     );
   }
 
+  SuiteDraft? _saving;
+
+  /// Calls [onDraft] for each "Log this in …" from Kick Rocks: the one
+  /// the app was opened with, then any that arrive later. Anything that
+  /// isn't a well-formed Kick Rocks envelope is ignored. Call once, where
+  /// the app can open its new-entry screen.
+  Future<void> listenForDrafts(void Function(SuiteDraft draft) onDraft) async {
+    void handle(String text) {
+      final d = SuiteDraft.tryParse(text);
+      if (d != null) onDraft(d);
+    }
+
+    _transport.onDraft(handle);
+    final first = await _transport.initialDraft();
+    if (first != null) handle(first);
+  }
+
+  /// Runs [save] (the app's normal save of the entry pre-filled from
+  /// [draft]); a [feed] or [send] started while it runs says the entry
+  /// came from [draft]'s Kick Rocks moment.
+  Future<T> fromDraft<T>(SuiteDraft draft, Future<T> Function() save) async {
+    _saving = draft;
+    try {
+      return await save();
+    } finally {
+      if (identical(_saving, draft)) _saving = null;
+    }
+  }
+
   /// Quiet handoff after a save. True when Kick Rocks took it.
   Future<bool> feed(SuiteMoment m) async {
+    final from = _saving?.momentId; // before any await: the save's own feed
     try {
       if (!await autoSend()) return false;
-      final text = await _wire(m);
+      final text = await _wire(m, fromMoment: from);
       if (text == null) return false;
       return await _transport.deliver(text, kickRocksPackages) != null;
     } on Object {
@@ -136,6 +170,7 @@ class SuiteFeed {
   /// installed (or is too old to take entries). A second tap on the same
   /// entry within two seconds is ignored (reported as sent).
   Future<bool> send(SuiteMoment m) async {
+    final from = _saving?.momentId;
     try {
       final now = _now();
       final last = _lastSend[m.entityId];
@@ -143,7 +178,7 @@ class SuiteFeed {
         return true;
       }
       _lastSend[m.entityId] = now;
-      final text = await _wire(m);
+      final text = await _wire(m, fromMoment: from);
       if (text == null) return false;
       return await _transport.share(text, kickRocksPackages) != null;
     } on Object {
@@ -194,7 +229,7 @@ class SuiteFeed {
   }
 
   /// The envelope as sent: namespaced id, back-link with the time.
-  Future<String?> _wire(SuiteMoment m) async {
+  Future<String?> _wire(SuiteMoment m, {String? fromMoment}) async {
     if (!localIdPattern.hasMatch(m.entityId)) return null;
     final ns = '${m.entityId}~${await installId()}';
     final wired = SuiteMoment(
@@ -206,6 +241,7 @@ class SuiteFeed {
       lat: m.lat,
       lng: m.lng,
       dateOnly: m.dateOnly,
+      fromMoment: fromMoment ?? m.fromMoment,
       deepLink: Uri(
         scheme: scheme,
         host: 'open',
@@ -215,5 +251,69 @@ class SuiteFeed {
     );
     final text = wired.encode();
     return utf8.encode(text).length <= SuiteMoment.maxBytes ? text : null;
+  }
+}
+
+/// A Kick Rocks moment handed over by "Log this in …", for the app to
+/// pre-fill a new entry with. Nothing is saved until the user saves.
+class SuiteDraft {
+  /// See the fields.
+  const SuiteDraft({
+    required this.momentId,
+    required this.time,
+    required this.note,
+    this.tripName,
+    this.lat,
+    this.lng,
+    this.dateOnly = false,
+  });
+
+  /// The Kick Rocks moment's id.
+  final String momentId;
+
+  /// When the moment happened (local midnight with [dateOnly]).
+  final DateTime time;
+
+  /// Only the day is known.
+  final bool dateOnly;
+
+  /// What the user wrote in Kick Rocks; null when they wrote nothing.
+  final String? note;
+
+  /// The trip it's on, when it's on one.
+  final String? tripName;
+
+  /// Where it happened, when Kick Rocks knows.
+  final double? lat;
+
+  /// Longitude; set together with [lat] or not at all.
+  final double? lng;
+
+  /// Whether there's a pin.
+  bool get hasPin => lat != null && lng != null;
+
+  /// The title Kick Rocks sends for a moment with no note.
+  static const untitled = 'A moment from Kick Rocks';
+
+  /// [text] as a draft, or null when it isn't a valid envelope from
+  /// Kick Rocks (hostile input: any app could send one).
+  static SuiteDraft? tryParse(String text) {
+    final SuiteMoment m;
+    try {
+      m = SuiteMoment.decode(text);
+    } on Object {
+      return null;
+    }
+    if (m.sourceApp != 'kick_rocks') return null;
+    final note = m.title == untitled ? null : m.title;
+    return SuiteDraft(
+      momentId: m.entityId,
+      time: m.dateOnly ? m.time : m.time.toLocal(),
+      dateOnly: m.dateOnly,
+      note: note,
+      tripName: m.summary,
+      lat: m.lat,
+      lng: m.lng,
+    );
   }
 }

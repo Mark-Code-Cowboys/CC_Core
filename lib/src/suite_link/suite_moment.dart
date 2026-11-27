@@ -19,6 +19,7 @@ class SuiteMoment {
     this.lng,
     this.deepLink,
     this.dateOnly = false,
+    this.fromMoment,
   });
 
   /// Envelope `format` tag.
@@ -77,6 +78,11 @@ class SuiteMoment {
   /// predate it ignore the key.
   final bool dateOnly;
 
+  /// The Kick Rocks moment this entry was logged from ("Log this in…"),
+  /// so Kick Rocks links that moment instead of adding a second one.
+  /// Same shape as [entityId]. v1 readers that predate it ignore it.
+  final String? fromMoment;
+
   /// The envelope as JSON.
   Map<String, Object?> toJson() => {
         'format': format,
@@ -90,6 +96,7 @@ class SuiteMoment {
         'lng': ?lng,
         'deepLink': ?deepLink?.toString(),
         if (dateOnly) 'dateOnly': true,
+        'fromMoment': ?fromMoment,
       };
 
   /// The envelope as text.
@@ -170,6 +177,10 @@ class SuiteMoment {
     if (summary != null && summary is! String) {
       throw const FormatException('Bad summary');
     }
+    final from = j['fromMoment'];
+    if (from != null && (from is! String || !idPattern.hasMatch(from))) {
+      throw const FormatException('Bad fromMoment');
+    }
     final link = j['deepLink'];
     if (link != null && link is! String) {
       throw const FormatException('Bad deepLink');
@@ -188,6 +199,7 @@ class SuiteMoment {
       deepLink:
           link is String && link.length <= 2048 ? Uri.tryParse(link) : null,
       dateOnly: dateOnly,
+      fromMoment: from as String?,
     );
   }
 }

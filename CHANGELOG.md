@@ -1,3 +1,22 @@
+## 0.30.0
+
+**suite_link** works both ways: siblings can now take Kick Rocks'
+"Log this in …" (additive; nothing changes for an app that doesn't
+listen).
+
+* `SuiteFeed.listenForDrafts(onDraft)` → `SuiteDraft` (Kick Rocks moment
+  id, time/dateOnly, note, trip name, optional pin). Only well-formed
+  `kick_rocks` envelopes; on Android 14+ a share naming any other sender
+  is dropped natively. A draft only pre-fills; nothing is saved.
+* `SuiteFeed.fromDraft(draft, save)`: a `feed`/`send` started during the
+  save carries `fromMoment`, so Kick Rocks links its own moment to the
+  new entry instead of adding a second one.
+* Envelope v1 gains optional `fromMoment` (entityId shape; older readers
+  ignore it).
+* Android: the app's main activity needs an ACTION_SEND filter for
+  `application/vnd.codecowboys.moment+json`. One method-channel handler
+  now serves both back-link and draft nudges.
+
 ## 0.29.0
 
 **places** narrowed to "you are here" only (breaking for 0.28.0 users;
